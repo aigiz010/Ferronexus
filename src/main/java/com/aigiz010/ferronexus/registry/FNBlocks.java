@@ -1,11 +1,9 @@
 package com.aigiz010.ferronexus.registry;
 
 import com.aigiz010.ferronexus.Ferronexus;
-import com.aigiz010.ferronexus.cable.CableBlock;
-import com.aigiz010.ferronexus.energy.VoltageTier;
+import com.aigiz010.ferronexus.conduit.ConduitBundleBlock;
 import com.aigiz010.ferronexus.machine.CoalGeneratorBlock;
 import com.aigiz010.ferronexus.machine.EnergyCellBlock;
-import com.aigiz010.ferronexus.nexus.NexusBusBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.SoundType;
@@ -17,13 +15,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class FNBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Ferronexus.MOD_ID);
 
-    public static final DeferredBlock<CableBlock> LV_CABLE = BLOCKS.register("lv_cable",
-            id -> new CableBlock(VoltageTier.LV, cableProps().setId(ResourceKey.create(Registries.BLOCK, id))));
-    public static final DeferredBlock<CableBlock> MV_CABLE = BLOCKS.register("mv_cable",
-            id -> new CableBlock(VoltageTier.MV, cableProps().setId(ResourceKey.create(Registries.BLOCK, id))));
-
-    public static final DeferredBlock<NexusBusBlock> NEXUS_BUS = BLOCKS.register("nexus_bus",
-            id -> new NexusBusBlock(cableProps().setId(ResourceKey.create(Registries.BLOCK, id))));
+    /** Блок-носитель до 16 разных проводов/труб. Ставится предметами проводов. */
+    public static final DeferredBlock<ConduitBundleBlock> CONDUIT_BUNDLE = BLOCKS.register("conduit_bundle",
+            id -> new ConduitBundleBlock(cableProps().setId(ResourceKey.create(Registries.BLOCK, id))));
 
     public static final DeferredBlock<CoalGeneratorBlock> COAL_GENERATOR = BLOCKS.register("coal_generator",
             id -> new CoalGeneratorBlock(machineProps()

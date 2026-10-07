@@ -1,7 +1,11 @@
 package com.aigiz010.ferronexus.registry;
 
 import com.aigiz010.ferronexus.Ferronexus;
+import com.aigiz010.ferronexus.conduit.ConduitItem;
+import com.aigiz010.ferronexus.conduit.ConduitType;
 import com.aigiz010.ferronexus.imprinter.ImprinterItem;
+import java.util.EnumMap;
+import java.util.Map;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -17,11 +21,16 @@ public final class FNItems {
     public static final DeferredItem<Item> STEEL_PLATE = ITEMS.registerSimpleItem("steel_plate");
 
     // Энергия
-    public static final DeferredItem<BlockItem> LV_CABLE = ITEMS.registerSimpleBlockItem(FNBlocks.LV_CABLE);
-    public static final DeferredItem<BlockItem> MV_CABLE = ITEMS.registerSimpleBlockItem(FNBlocks.MV_CABLE);
-    public static final DeferredItem<BlockItem> NEXUS_BUS = ITEMS.registerSimpleBlockItem(FNBlocks.NEXUS_BUS);
     public static final DeferredItem<BlockItem> COAL_GENERATOR = ITEMS.registerSimpleBlockItem(FNBlocks.COAL_GENERATOR);
     public static final DeferredItem<BlockItem> ENERGY_CELL = ITEMS.registerSimpleBlockItem(FNBlocks.ENERGY_CELL);
+
+    // Провода и трубы (ставятся до 16 разных в один блок)
+    public static final Map<ConduitType, DeferredItem<ConduitItem>> CONDUITS = new EnumMap<>(ConduitType.class);
+    static {
+        for (ConduitType t : ConduitType.values()) {
+            CONDUITS.put(t, ITEMS.registerItem(t.id(), p -> new ConduitItem(t, p)));
+        }
+    }
 
     // Инструменты
     public static final DeferredItem<ImprinterItem> IMPRINTER = ITEMS.registerItem("imprinter", ImprinterItem::new);
