@@ -1,43 +1,40 @@
 package com.aigiz010.ferronexus.energy;
 
-import net.neoforged.neoforge.energy.EnergyStorage;
+import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 
 /** RF-буфер машины. Внутренние методы не ограничены скоростью входа/выхода. */
-public class FNEnergyStorage extends EnergyStorage {
+public class FNEnergyStorage extends SimpleEnergyHandler {
     private final Runnable onChanged;
 
-    public FNEnergyStorage(int capacity, int maxReceive, int maxExtract, Runnable onChanged) {
-        super(capacity, maxReceive, maxExtract);
+    public FNEnergyStorage(int capacity, int maxInsert, int maxExtract, Runnable onChanged) {
+        super(capacity, maxInsert, maxExtract);
         this.onChanged = onChanged;
     }
 
     @Override
-    public int receiveEnergy(int amount, boolean simulate) {
-        int r = super.receiveEnergy(amount, simulate);
-        if (r > 0 && !simulate) onChanged.run();
-        return r;
+    protected void onEnergyChanged(int previousAmount) {
+        if (onChanged != null) onChanged.run();
     }
 
-    @Override
-    public int extractEnergy(int amount, boolean simulate) {
-        int r = super.extractEnergy(amount, simulate);
-        if (r > 0 && !simulate) onChanged.run();
-        return r;
-    }
+    public int getEnergyStored() { return energy; }
 
+    public int getMaxEnergyStored() { return capacity; }
+
+    public int freeSpace() { return Math.max(0, capacity - energy); }
+
+    /** Вне транзакций: добавить энергию без ограничения скорости. */
     public int receiveInternal(int amount) {
-        int r = Math.max(0, Math.min(capacity - energy, amount));
-        if (r > 0) { energy += r; onChanged.run(); }
+        int r = Math.max(0, Math.min(freeSpace(), amount));
+        if (r > 0) set(energy + r);
         return r;
     }
 
+    /** Вне транзакций: забрать энергию без ограничения скорости. */
     public int extractInternal(int amount) {
         int r = Math.max(0, Math.min(energy, amount));
-        if (r > 0) { energy -= r; onChanged.run(); }
+        if (r > 0) set(energy - r);
         return r;
     }
 
-    public int freeSpace() { return capacity - energy; }
-
-    public void setEnergy(int value) { energy = Math.max(0, Math.min(capacity, value)); }
+    public void setEnergy(int value) { set(Math.max(0, Math.min(capacity, value))); }
 }

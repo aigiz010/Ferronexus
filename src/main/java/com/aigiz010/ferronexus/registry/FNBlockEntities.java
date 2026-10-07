@@ -27,9 +27,9 @@ public final class FNBlockEntities {
                     Set.of(FNBlocks.ENERGY_CELL.get())));
 
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, CABLE.get(), (be, side) -> be.getEnergy(side));
-        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, COAL_GENERATOR.get(), (be, side) -> be.getEnergy(side));
-        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ENERGY_CELL.get(), (be, side) -> be.getEnergy(side));
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, CABLE.get(), (be, side) -> be.getEnergy(side));
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, COAL_GENERATOR.get(), (be, side) -> be.getEnergy(side));
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ENERGY_CELL.get(), (be, side) -> be.getEnergy(side));
     }
 
     private FNBlockEntities() {}

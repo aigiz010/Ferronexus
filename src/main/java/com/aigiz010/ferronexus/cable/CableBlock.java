@@ -78,7 +78,7 @@ public class CableBlock extends Block implements EntityBlock {
         BlockPos other = pos.relative(dir);
         if (level.getBlockState(other).getBlock() instanceof CableBlock) return ConnectionType.CABLE;
         if (level instanceof Level real
-                && real.getCapability(Capabilities.EnergyStorage.BLOCK, other, dir.getOpposite()) != null) {
+                && real.getCapability(Capabilities.Energy.BLOCK, other, dir.getOpposite()) != null) {
             return ConnectionType.PLUG;
         }
         return ConnectionType.NONE;

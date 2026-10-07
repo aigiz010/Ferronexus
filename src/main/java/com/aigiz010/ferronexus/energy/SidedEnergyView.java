@@ -1,13 +1,12 @@
 package com.aigiz010.ferronexus.energy;
 
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /** Вид на буфер для конкретной стороны: только вход, только выход или оба. */
-public record SidedEnergyView(FNEnergyStorage storage, boolean input, boolean output) implements IEnergyStorage {
-    @Override public int receiveEnergy(int amount, boolean simulate) { return input ? storage.receiveEnergy(amount, simulate) : 0; }
-    @Override public int extractEnergy(int amount, boolean simulate) { return output ? storage.extractEnergy(amount, simulate) : 0; }
-    @Override public int getEnergyStored() { return storage.getEnergyStored(); }
-    @Override public int getMaxEnergyStored() { return storage.getMaxEnergyStored(); }
-    @Override public boolean canReceive() { return input; }
-    @Override public boolean canExtract() { return output; }
+public record SidedEnergyView(FNEnergyStorage storage, boolean input, boolean output) implements EnergyHandler {
+    @Override public int insert(int amount, TransactionContext tx) { return input ? storage.insert(amount, tx) : 0; }
+    @Override public int extract(int amount, TransactionContext tx) { return output ? storage.extract(amount, tx) : 0; }
+    @Override public long getAmountAsLong() { return storage.getAmountAsLong(); }
+    @Override public long getCapacityAsLong() { return storage.getCapacityAsLong(); }
 }

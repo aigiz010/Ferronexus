@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 
 /** Базовая машина: RF-буфер, ярус мощности, приём энергии других систем с конвертацией. */
 public abstract class MachineBlockEntity extends BlockEntity {
@@ -38,7 +38,7 @@ public abstract class MachineBlockEntity extends BlockEntity {
     protected abstract void tickMachine();
 
     /** Что видят соседи с указанной стороны. */
-    public abstract IEnergyStorage getEnergy(Direction side);
+    public abstract EnergyHandler getEnergy(Direction side);
 
     public FNEnergyStorage energy() { return energy; }
 

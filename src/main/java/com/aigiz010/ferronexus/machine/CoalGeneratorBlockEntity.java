@@ -7,11 +7,13 @@ import com.aigiz010.ferronexus.registry.FNBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 
 public class CoalGeneratorBlockEntity extends MachineBlockEntity {
     public static final int RF_PER_TICK = 20;
@@ -34,7 +36,7 @@ public class CoalGeneratorBlockEntity extends MachineBlockEntity {
             burnTime--;
             energy.receiveInternal(RF_PER_TICK);
         } else if (!fuel.isEmpty() && energy.freeSpace() >= RF_PER_TICK) {
-            int duration = level.fuelValues().burnDuration(fuel);
+            int duration = burnDuration(fuel);
             if (duration > 0) {
                 burnTime = burnTotal = duration;
                 fuel.shrink(1);
@@ -57,7 +59,7 @@ public class CoalGeneratorBlockEntity extends MachineBlockEntity {
 
     /** Положить топливо из руки. Возвращает true, если что-то принято. */
     public boolean insertFuel(ItemStack held) {
-        if (held.isEmpty() || level == null || level.fuelValues().burnDuration(held) <= 0) return false;
+        if (held.isEmpty() || level == null || burnDuration(held) <= 0) return false;
         if (fuel.isEmpty()) {
             fuel = held.split(held.getMaxStackSize());
         } else if (ItemStack.isSameItemSameComponents(fuel, held)) {
@@ -72,12 +74,24 @@ public class CoalGeneratorBlockEntity extends MachineBlockEntity {
         return true;
     }
 
+    /** Время горения в тиках. Своя таблица, не зависит от версии API. */
+    public static int burnDuration(ItemStack s) {
+        if (s.isEmpty()) return 0;
+        if (s.is(Items.COAL) || s.is(Items.CHARCOAL)) return 1600;
+        if (s.is(Items.COAL_BLOCK)) return 16000;
+        if (s.is(Items.BLAZE_ROD)) return 2400;
+        if (s.is(Items.DRIED_KELP_BLOCK)) return 4000;
+        if (s.is(ItemTags.LOGS_THAT_BURN) || s.is(ItemTags.PLANKS)) return 300;
+        if (s.is(Items.STICK)) return 100;
+        return 0;
+    }
+
     public ItemStack fuel() { return fuel; }
 
     public int burnProgressPercent() { return burnTotal == 0 ? 0 : burnTime * 100 / burnTotal; }
 
     @Override
-    public IEnergyStorage getEnergy(Direction side) { return outputView; }
+    public EnergyHandler getEnergy(Direction side) { return outputView; }
 
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {

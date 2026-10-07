@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 
 /**
  * Простая модель передачи: каждый отрезок провода хранит небольшой буфер,
@@ -28,7 +28,7 @@ public class CableBlockEntity extends BlockEntity {
         this.buffer = new FNEnergyStorage(rate * 4, rate, rate, this::setChanged);
     }
 
-    public IEnergyStorage getEnergy(Direction side) { return buffer; }
+    public EnergyHandler getEnergy(Direction side) { return buffer; }
 
     void serverTick() {
         if (level == null || buffer.getEnergyStored() <= 0) return;

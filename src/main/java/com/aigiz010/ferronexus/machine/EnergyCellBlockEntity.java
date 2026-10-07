@@ -7,7 +7,7 @@ import com.aigiz010.ferronexus.registry.FNBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 
 /** Накопитель LV: принимает со всех сторон, отдаёт только через лицевую сторону. */
 public class EnergyCellBlockEntity extends MachineBlockEntity {
@@ -29,7 +29,7 @@ public class EnergyCellBlockEntity extends MachineBlockEntity {
     }
 
     @Override
-    public IEnergyStorage getEnergy(Direction side) {
+    public EnergyHandler getEnergy(Direction side) {
         return side == front() ? outputView : inputView;
     }
 }

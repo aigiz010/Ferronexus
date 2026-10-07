@@ -1,5 +1,6 @@
 package com.aigiz010.ferronexus.machine;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -49,7 +50,7 @@ public abstract class MachineBlock extends Block implements EntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MachineBlockEntity m) {
-            player.displayClientMessage(statusLine(m), true);
+            if (player instanceof ServerPlayer sp) sp.sendSystemMessage(statusLine(m), true);
         }
         return InteractionResult.SUCCESS;
     }

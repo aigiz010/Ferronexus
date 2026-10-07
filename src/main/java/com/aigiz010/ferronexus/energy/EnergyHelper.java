@@ -5,23 +5,28 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 public final class EnergyHelper {
     private EnergyHelper() {}
 
-    public static IEnergyStorage neighbour(Level level, BlockPos pos, Direction dir) {
-        return level.getCapability(Capabilities.EnergyStorage.BLOCK, pos.relative(dir), dir.getOpposite());
+    public static EnergyHandler neighbour(Level level, BlockPos pos, Direction dir) {
+        return level.getCapability(Capabilities.Energy.BLOCK, pos.relative(dir), dir.getOpposite());
     }
 
     /** Отдать RF соседу. Возвращает, сколько принято. */
     public static int pushTo(Level level, BlockPos pos, Direction dir, FNEnergyStorage src, int max) {
         int offer = Math.min(max, src.getEnergyStored());
         if (offer <= 0) return 0;
-        IEnergyStorage target = neighbour(level, pos, dir);
-        if (target == null || !target.canReceive()) return 0;
-        int accepted = target.receiveEnergy(offer, false);
-        src.extractInternal(accepted);
+        EnergyHandler target = neighbour(level, pos, dir);
+        if (target == null) return 0;
+        int accepted;
+        try (Transaction tx = Transaction.openRoot()) {
+            accepted = target.insert(offer, tx);
+            tx.commit();
+        }
+        if (accepted > 0) src.extractInternal(accepted);
         return accepted;
     }
 
