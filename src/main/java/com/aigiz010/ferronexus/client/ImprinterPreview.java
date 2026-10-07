@@ -4,6 +4,7 @@ import com.aigiz010.ferronexus.Ferronexus;
 import com.aigiz010.ferronexus.imprinter.ImprintMode;
 import com.aigiz010.ferronexus.imprinter.ImprinterItem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,14 +13,19 @@ import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
@@ -33,9 +39,10 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 
 /**
- * Подсветка Импринтера (только пока он в руке). Рисуется сплошным цветом, без текстур.
+ * Подсветка Импринтера (только пока он в руке).
  *  - рамка выделения между углами;
- *  - «Вставка» — мигающий прозрачный призрак структуры (с учётом поворота на R), красным — где место занято;
+ *  - «Вставка» — мигающий полупрозрачный призрак структуры с настоящими текстурами блоков
+ *    (с учётом поворота на R); красным оттенком — где место занято;
  *  - «Применить настройки» — зелёным совпадающие блоки.
  */
 @EventBusSubscriber(modid = Ferronexus.MOD_ID, value = Dist.CLIENT)
@@ -43,8 +50,12 @@ public final class ImprinterPreview {
     private ImprinterPreview() {}
 
     private static final float E = 0.03f; // толщина рёбер рамки
+    private static final int FULL_BRIGHT = 0xF000F0;
+    private static final int NO_OVERLAY = 10 << 16;
+    private static final int MAX_TEXTURED = 4096;
 
-    private record Ghost(int x, int y, int z, BlockState state) {}
+    /** quads — уже отсечённые грани модели; пусто, если у блока нет статичной модели (рисуется кубом). */
+    private record Ghost(int x, int y, int z, BlockState state, List<BakedQuad> quads) {}
 
     private static CustomData cachedData;
     private static List<Ghost> cachedGhosts = List.of();
@@ -68,7 +79,8 @@ public final class ImprinterPreview {
         Vec3 cam = mc.gameRenderer.mainCamera().position();
         PoseStack pose = event.getPoseStack();
         SubmitNodeCollector out = event.getSubmitNodeCollector();
-        RenderType type = RenderTypes.debugQuads(); // только позиция + цвет, текстура не нужна
+        RenderType flat = RenderTypes.debugQuads();
+        RenderType textured = RenderTypes.translucentMovingBlock();
 
         double t = (System.currentTimeMillis() % 100000L) / 1000.0;
         float pulse = (float) (0.5 + 0.5 * Math.sin(t * Math.PI * 2 / 1.2));
@@ -88,7 +100,7 @@ public final class ImprinterPreview {
             final int cornerA = argb(200, 80, 255, 120), cornerB = argb(200, 255, 170, 60);
             final BlockPos fa = a, fb = b;
             final boolean showB = hasB;
-            out.submitCustomGeometry(pose, type, (p, vc) -> {
+            out.submitCustomGeometry(pose, flat, (p, vc) -> {
                 frame(p, vc, x0, y0, z0, x1, y1, z1, edge);
                 cube(p, vc, x0 + 0.005f, y0 + 0.005f, z0 + 0.005f, x1 - 0.005f, y1 - 0.005f, z1 - 0.005f, fill, null, 0);
                 frame(p, vc, fa.getX() - 0.01f, fa.getY() - 0.01f, fa.getZ() - 0.01f, fa.getX() + 1.01f, fa.getY() + 1.01f, fa.getZ() + 1.01f, cornerA);
@@ -98,7 +110,7 @@ public final class ImprinterPreview {
 
         if ((mode == ImprintMode.PASTE || mode == ImprintMode.APPLY_SETTINGS)
                 && mc.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK) {
-            refreshCache(cd, tag, level, rot);
+            refreshCache(mc, cd, tag, level, rot);
             if (!cachedGhosts.isEmpty()) {
                 final BlockPos origin = mode == ImprintMode.PASTE ? hit.getBlockPos().relative(hit.getDirection()) : hit.getBlockPos();
                 int rsx = Math.max(1, tag.getIntOr("SX", 1)), rsz = Math.max(1, tag.getIntOr("SZ", 1));
@@ -108,13 +120,17 @@ public final class ImprinterPreview {
                 final int boxEdge = argb((int) (140 + 100 * pulse), 255, 255, 255);
                 final List<Ghost> ghosts = cachedGhosts;
                 final Set<Long> cells = cachedCells;
-                out.submitCustomGeometry(pose, type, (p, vc) -> {
-                    float ox = origin.getX(), oy = origin.getY(), oz = origin.getZ();
+                final float ox = origin.getX(), oy = origin.getY(), oz = origin.getZ();
+
+                // рамка + блоки без модели (и всё в режиме «Применить настройки») — сплошным цветом
+                out.submitCustomGeometry(pose, flat, (p, vc) -> {
                     frame(p, vc, ox - 0.02f, oy - 0.02f, oz - 0.02f, ox + sx + 0.02f, oy + sy + 0.02f, oz + sz + 0.02f, boxEdge);
+                    int n = 0;
                     for (Ghost g : ghosts) {
+                        boolean tex = paste && !g.quads().isEmpty() && n++ < MAX_TEXTURED;
+                        if (tex) continue;
                         BlockPos wp = origin.offset(g.x(), g.y(), g.z());
-                        int rgb;
-                        int alpha;
+                        int rgb, alpha;
                         if (paste) {
                             boolean blocked = !level.getBlockState(wp).canBeReplaced();
                             rgb = blocked ? 0xFF3030 : (g.state().getMapColor(level, wp).col & 0xFFFFFF);
@@ -125,33 +141,95 @@ public final class ImprinterPreview {
                             rgb = match ? 0x50FF70 : 0x808080;
                             alpha = (int) ((match ? 50 : 20) + (match ? 90 : 30) * pulse);
                         }
-                        int c = (alpha << 24) | rgb;
                         float x = ox + g.x(), y = oy + g.y(), z = oz + g.z();
-                        cube(p, vc, x + 0.01f, y + 0.01f, z + 0.01f, x + 0.99f, y + 0.99f, z + 0.99f, c, cells, BlockPos.asLong(g.x(), g.y(), g.z()));
+                        cube(p, vc, x + 0.01f, y + 0.01f, z + 0.01f, x + 0.99f, y + 0.99f, z + 0.99f, (alpha << 24) | rgb, cells, BlockPos.asLong(g.x(), g.y(), g.z()));
                     }
                 });
+
+                // настоящие текстуры блоков, полупрозрачно и мигая
+                if (paste) {
+                    final int alpha = (int) (90 + 120 * pulse); // ~35%..80%
+                    int n = 0;
+                    for (Ghost g : ghosts) {
+                        if (g.quads().isEmpty()) continue;
+                        if (n++ >= MAX_TEXTURED) break;
+                        BlockPos wp = origin.offset(g.x(), g.y(), g.z());
+                        boolean blocked = !level.getBlockState(wp).canBeReplaced();
+                        int mapRgb = g.state().getMapColor(level, wp).col & 0xFFFFFF;
+                        if (mapRgb == 0) mapRgb = 0xFFFFFF;
+                        final int plain = (alpha << 24) | (blocked ? 0xFF6060 : 0xFFFFFF);
+                        final int tinted = (alpha << 24) | (blocked ? 0xFF6060 : mapRgb);
+                        final List<BakedQuad> quads = g.quads();
+                        pose.pushPose();
+                        // чуть меньше блока — чтобы не мерцало с соседними настоящими блоками
+                        pose.translate(ox + g.x() + 0.5f, oy + g.y() + 0.5f, oz + g.z() + 0.5f);
+                        pose.scale(0.996f, 0.996f, 0.996f);
+                        pose.translate(-0.5f, -0.5f, -0.5f);
+                        out.submitCustomGeometry(pose, textured, (p, vc) -> {
+                            QuadInstance inst = new QuadInstance();
+                            inst.setLightCoords(FULL_BRIGHT);
+                            inst.setOverlayCoords(NO_OVERLAY);
+                            for (BakedQuad q : quads) {
+                                inst.setColor(q.materialInfo().isTinted() ? tinted : plain);
+                                vc.putBakedQuad(p, q, inst);
+                            }
+                        });
+                        pose.popPose();
+                    }
+                }
             }
         }
 
         pose.popPose();
     }
 
-    private static void refreshCache(CustomData cd, CompoundTag tag, ClientLevel level, int rot) {
+    private static void refreshCache(Minecraft mc, CustomData cd, CompoundTag tag, ClientLevel level, int rot) {
         if (cd == cachedData) return;
         cachedData = cd;
         ListTag list = tag.getListOrEmpty("Blocks");
         int sx = Math.max(1, tag.getIntOr("SX", 1)), sz = Math.max(1, tag.getIntOr("SZ", 1));
         var blocks = level.holderLookup(Registries.BLOCK);
-        List<Ghost> g = new ArrayList<>(list.size());
+        List<int[]> pos = new ArrayList<>(list.size());
+        List<BlockState> states = new ArrayList<>(list.size());
         Set<Long> cells = new HashSet<>();
+        Set<Long> solid = new HashSet<>();
         for (int i = 0; i < list.size(); i++) {
             CompoundTag e = list.getCompoundOrEmpty(i);
             BlockState st = NbtUtils.readBlockState(blocks, e.getCompoundOrEmpty("S"));
             if (st.isAir()) continue;
+            st = st.rotate(ImprinterItem.rotation(rot));
             int[] xz = ImprinterItem.rotateXZ(e.getIntOr("X", 0), e.getIntOr("Z", 0), sx, sz, rot);
             int y = e.getIntOr("Y", 0);
-            g.add(new Ghost(xz[0], y, xz[1], st.rotate(ImprinterItem.rotation(rot))));
-            cells.add(BlockPos.asLong(xz[0], y, xz[1]));
+            pos.add(new int[] {xz[0], y, xz[1]});
+            states.add(st);
+            long key = BlockPos.asLong(xz[0], y, xz[1]);
+            cells.add(key);
+            if (st.canOcclude()) solid.add(key);
+        }
+        List<Ghost> g = new ArrayList<>(pos.size());
+        RandomSource rand = RandomSource.create(42L);
+        List<BlockStateModelPart> parts = new ArrayList<>();
+        for (int i = 0; i < pos.size(); i++) {
+            int[] p = pos.get(i);
+            BlockState st = states.get(i);
+            List<BakedQuad> quads = new ArrayList<>();
+            try {
+                BlockStateModel model = mc.getModelManager().getBlockStateModelSet().get(st);
+                parts.clear();
+                rand.setSeed(42L);
+                model.collectParts(rand, parts);
+                for (BlockStateModelPart part : parts) {
+                    quads.addAll(part.getQuads(null));
+                    for (Direction d : Direction.values()) {
+                        // грань, прижатая к сплошному соседу из той же структуры, не видна
+                        if (solid.contains(BlockPos.asLong(p[0] + d.getStepX(), p[1] + d.getStepY(), p[2] + d.getStepZ()))) continue;
+                        quads.addAll(part.getQuads(d));
+                    }
+                }
+            } catch (Throwable ignored) {
+                quads.clear();
+            }
+            g.add(new Ghost(p[0], p[1], p[2], st, quads));
         }
         cachedGhosts = g;
         cachedCells = cells;
