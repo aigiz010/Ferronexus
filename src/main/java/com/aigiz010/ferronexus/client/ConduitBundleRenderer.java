@@ -6,6 +6,8 @@ import com.aigiz010.ferronexus.conduit.ConduitShapes;
 import com.aigiz010.ferronexus.conduit.ConduitType;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.List;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -13,13 +15,16 @@ import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Рисует тонкие провода и трубы внутри блока. Общего корпуса нет:
- * у каждого провода свой тонкий узел, отводы к соседям и разъёмы к машинам.
+ * Рисует тонкие провода и трубы внутри блока: у каждого свой тонкий узел,
+ * отводы к соседям и разъёмы к машинам.
+ * Провод под прицелом рисуется целиком: части других проводов, которые его пересекают, скрываются.
  */
 public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleBlockEntity, ConduitBundleRenderer.State> {
     private static final int NO_OVERLAY = 10 << 16;
@@ -36,6 +41,7 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
 
     public static class State extends BlockEntityRenderState {
         int mask;
+        int focus = -1;
         final int[] conn = new int[ConduitType.values().length];
         final int[] ends = new int[ConduitType.values().length];
     }
@@ -60,27 +66,41 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
             s.conn[t.ordinal()] = c;
             s.ends[t.ordinal()] = e;
         }
+        s.focus = -1;
+        BlockPos pos = be.getBlockPos();
+        if (Minecraft.getInstance().hitResult instanceof BlockHitResult hit && pos.equals(hit.getBlockPos())) {
+            Vec3 l = hit.getLocation();
+            ConduitType t = ConduitShapes.pickType(be, (l.x - pos.getX()) * 16, (l.y - pos.getY()) * 16, (l.z - pos.getZ()) * 16);
+            if (t != null) s.focus = t.ordinal();
+        }
     }
 
     @Override
     public void submit(State s, PoseStack pose, SubmitNodeCollector out, CameraRenderState camera) {
         if (s.mask == 0) return;
         final int light = s.lightCoords;
+        final List<double[]> focusParts = s.focus < 0 ? List.of()
+                : ConduitShapes.pieces(ConduitType.values()[s.focus], s.conn[s.focus] | s.ends[s.focus]);
         for (ConduitType t : ConduitType.values()) {
             if ((s.mask & t.bit()) == 0) continue;
             final int e = s.ends[t.ordinal()];
             final int bits = s.conn[t.ordinal()] | e;
+            final boolean other = s.focus >= 0 && s.focus != t.ordinal();
             final Direction.Axis ax = ConduitShapes.axisOf(bits);
             out.submitCustomGeometry(pose, RenderTypes.entityCutout(TEX[t.ordinal()]), (p, vc) -> {
                 if (ax != null) {
-                    // Прямой участок — одна сплошная трубка.
-                    box(p, vc, ConduitShapes.through(t, ax), light, true, ax);
+                    double[] b = ConduitShapes.through(t, ax);
+                    if (!(other && hidden(b, focusParts))) box(p, vc, b, light, true, ax);
                     return;
                 }
-                double[] jy = ConduitShapes.jointY(t, bits);
-                box(p, vc, ConduitShapes.joint(t, jy), light, false, null);
-                for (Direction d : Direction.values())
-                    if ((bits & (1 << d.ordinal())) != 0) box(p, vc, ConduitShapes.armTo(t, d, jy), light, true, d.getAxis());
+                double[] jz = ConduitShapes.jointZ(t, bits);
+                double[] j = ConduitShapes.joint(t, jz);
+                if (!(other && hidden(j, focusParts))) box(p, vc, j, light, false, null);
+                for (Direction d : Direction.values()) {
+                    if ((bits & (1 << d.ordinal())) == 0) continue;
+                    double[] b = ConduitShapes.armTo(t, d, jz);
+                    if (!(other && hidden(b, focusParts))) box(p, vc, b, light, true, d.getAxis());
+                }
             });
             if (e != 0) {
                 out.submitCustomGeometry(pose, RenderTypes.entityCutout(PLUG), (p, vc) -> {
@@ -89,6 +109,11 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
                 });
             }
         }
+    }
+
+    private static boolean hidden(double[] b, List<double[]> focus) {
+        for (double[] f : focus) if (ConduitShapes.overlaps(b, f)) return true;
+        return false;
     }
 
     /** Коробка в пикселях 0..16. stretch: u идёт вдоль оси провода, v — поперёк. */
@@ -122,11 +147,8 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
             if (stretch && !endCap) {
                 u = q[ua] - uMin;                       // по длине: 1 блок = вся текстура
                 w = vLen <= 0 ? 0 : (q[va] - vMin) / vLen; // поперёк: вся высота текстуры
-            } else if (endCap) {
-                u = 0.02f + (uLen <= 0 ? 0 : (q[ua] - uMin) / uLen) * 0.06f;
-                w = vLen <= 0 ? 0 : (q[va] - vMin) / vLen;
             } else {
-                // Узел: берём узкую полосу текстуры провода, чтобы цвет совпадал с трубкой.
+                // Узел и торцы: узкая полоса текстуры провода, чтобы цвет совпадал с трубкой.
                 u = 0.02f + (uLen <= 0 ? 0 : (q[ua] - uMin) / uLen) * 0.06f;
                 w = vLen <= 0 ? 0 : (q[va] - vMin) / vLen;
             }
