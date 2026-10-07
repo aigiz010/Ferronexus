@@ -79,13 +79,39 @@ jobs:
             echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | grep -vE '^\s*(private|static \{\})' | head -80 || true
           done > api.txt
 
+      - name: Dump storage-network API
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          mkdir -p sn && cd sn
+          : > ../sn_api.txt
+          for base in https://modmaven.dev/org/appliedenergistics/appliedenergistics2 https://maven.neoforged.net/releases/org/appliedenergistics/appliedenergistics2; do
+            curl -fsSL "$base/maven-metadata.xml" -o meta.xml && break
+          done
+          echo "base=$base" >> ../sn_api.txt
+          grep -oE '<version>[^<]+</version>' meta.xml | sed -E 's#</?version>##g' | grep -E '^26\.' | tail -30 > vers.txt
+          cat vers.txt >> ../sn_api.txt
+          v=$(grep -E '^26\.3' vers.txt | tail -1); [ -z "$v" ] && v=$(tail -1 vers.txt)
+          echo "chosen=$v" >> ../sn_api.txt
+          curl -fsSL "$base/$v/appliedenergistics2-$v.jar" -o sn.jar || curl -fsSL "$base/$v/appliedenergistics2-$v-api.jar" -o sn.jar
+          ls -la >> ../sn_api.txt
+          CP="sn.jar:$(find ~/.gradle/caches -name '*.jar' 2>/dev/null | grep -iE 'neoforge|minecraft' | grep -viE 'sources|javadoc' | tr '\n' ':')"
+          unzip -Z1 sn.jar | grep -E '^appeng/api/(networking/(IInWorldGridNodeHost|IGridNode|IManagedGridNode|GridHelper|GridFlags|IGridNodeListener|IGridConnection)|util/AECableType|AECapabilities)' | grep -E '\.class$' | grep -vE '\$[0-9]+\.class$' > snclasses.txt
+          unzip -Z1 sn.jar | grep -E '^appeng/api/' | grep -iE 'capab|gridhelper|nodehost' >> ../sn_api.txt
+          for c in $(sed 's#/#.#g; s#\.class$##' snclasses.txt); do
+            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | head -80
+          done >> ../sn_api.txt
+          true
+
       - name: Publish build log
         if: always() && github.event_name != 'pull_request'
         shell: bash
         run: |
           mkdir -p /tmp/out
           [ -f build.log ] && cp build.log /tmp/out/build.log || echo "no log" > /tmp/out/build.log
-          cp neo.txt versions26.txt api.txt classes.txt /tmp/out/ 2>/dev/null || true
+          cp neo.txt versions26.txt api.txt classes.txt sn_api.txt /tmp/out/ 2>/dev/null || true
           grep -nE -A3 "error:|FAILED|What went wrong|Could not" /tmp/out/build.log | head -400 > /tmp/out/errors.txt || true
           echo "status=${{ job.status }}" > /tmp/out/status.txt
           echo "version=0.2.${{ github.run_number }}" >> /tmp/out/status.txt
