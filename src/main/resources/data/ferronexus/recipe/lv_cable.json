@@ -1,0 +1,1 @@
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["WWW", "CCC", "WWW"], "key": {"W": "#minecraft:wool", "C": "minecraft:copper_ingot"}, "result": {"id": "ferronexus:lv_cable", "count": 6}}

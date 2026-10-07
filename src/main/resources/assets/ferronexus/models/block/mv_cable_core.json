@@ -1,0 +1,1 @@
+{"textures": {"particle": "minecraft:block/cyan_terracotta", "all": "minecraft:block/cyan_terracotta"}, "elements": [{"from": [6, 6, 6], "to": [10, 10, 10], "faces": {"north": {"texture": "#all"}, "south": {"texture": "#all"}, "east": {"texture": "#all"}, "west": {"texture": "#all"}, "up": {"texture": "#all"}, "down": {"texture": "#all"}}}]}

@@ -1,5 +1,7 @@
 package com.aigiz010.ferronexus;
 
+import com.aigiz010.ferronexus.registry.FNBlockEntities;
+import com.aigiz010.ferronexus.registry.FNBlocks;
 import com.aigiz010.ferronexus.registry.FNCreativeTabs;
 import com.aigiz010.ferronexus.registry.FNItems;
 import com.mojang.logging.LogUtils;
@@ -14,8 +16,11 @@ public final class Ferronexus {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public Ferronexus(IEventBus modBus, ModContainer container) {
+        FNBlocks.BLOCKS.register(modBus);
         FNItems.ITEMS.register(modBus);
+        FNBlockEntities.TYPES.register(modBus);
         FNCreativeTabs.TABS.register(modBus);
+        modBus.addListener(FNBlockEntities::registerCapabilities);
         LOGGER.info("Ferronexus initialised");
     }
 }

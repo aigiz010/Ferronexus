@@ -4,5 +4,11 @@
   "item.ferronexus.bronze_ingot": "Бронзовый слиток",
   "item.ferronexus.steel_ingot": "Стальной слиток",
   "item.ferronexus.steel_plate": "Стальная пластина",
-  "item.ferronexus.imprinter": "Импринтер"
+  "item.ferronexus.imprinter": "Импринтер",
+  "block.ferronexus.lv_cable": "Провод LV",
+  "block.ferronexus.mv_cable": "Провод MV",
+  "block.ferronexus.coal_generator": "Угольный генератор",
+  "block.ferronexus.energy_cell": "Энергоячейка LV",
+  "message.ferronexus.energy": "%s / %s RF (%s)",
+  "message.ferronexus.generator": "%s / %s RF | горение %s%% | топливо: %s"
 }

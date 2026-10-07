@@ -1,0 +1,1 @@
+{"variants": {"facing=north": {"model": "ferronexus:block/energy_cell"}, "facing=east": {"model": "ferronexus:block/energy_cell", "y": 90}, "facing=south": {"model": "ferronexus:block/energy_cell", "y": 180}, "facing=west": {"model": "ferronexus:block/energy_cell", "y": 270}}}

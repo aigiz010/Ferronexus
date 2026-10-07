@@ -4,5 +4,11 @@
   "item.ferronexus.bronze_ingot": "Bronze Ingot",
   "item.ferronexus.steel_ingot": "Steel Ingot",
   "item.ferronexus.steel_plate": "Steel Plate",
-  "item.ferronexus.imprinter": "Imprinter"
+  "item.ferronexus.imprinter": "Imprinter",
+  "block.ferronexus.lv_cable": "LV Cable",
+  "block.ferronexus.mv_cable": "MV Cable",
+  "block.ferronexus.coal_generator": "Coal Generator",
+  "block.ferronexus.energy_cell": "LV Energy Cell",
+  "message.ferronexus.energy": "%s / %s RF (%s)",
+  "message.ferronexus.generator": "%s / %s RF | burning %s%% | fuel: %s"
 }
