@@ -29,11 +29,11 @@ public final class ImprinterKeys {
 
     public static final KeyMapping.Category CATEGORY =
             new KeyMapping.Category(Identifier.fromNamespaceAndPath(Ferronexus.MOD_ID, "main"));
-    public static final KeyMapping ROTATE = new KeyMapping(ImprinterItem.ROTATE_KEY, KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM, InputConstants.KEY_R, CATEGORY);
+    public static final KeyMapping ROTATE = new KeyMapping(ImprinterItem.ROTATE_KEY, InputConstants.KEY_R, CATEGORY);
 
     @SubscribeEvent
     public static void onRegisterKeys(RegisterKeyMappingsEvent event) {
+        ROTATE.setKeyConflictContext(KeyConflictContext.IN_GAME);
         event.registerCategory(CATEGORY);
         event.register(ROTATE);
     }
@@ -43,7 +43,7 @@ public final class ImprinterKeys {
         Minecraft mc = Minecraft.getInstance();
         while (ROTATE.consumeClick()) {
             Player p = mc.player;
-            if (p == null || mc.screen != null) continue;
+            if (p == null) continue;
             if (p.getMainHandItem().getItem() instanceof ImprinterItem || p.getOffhandItem().getItem() instanceof ImprinterItem) {
                 ClientPacketDistributor.sendToServer(RotateImprinterPayload.INSTANCE);
             }
