@@ -42,5 +42,18 @@
   "jade.ferronexus.dir.south": "south",
   "jade.ferronexus.dir.west": "west",
   "jade.ferronexus.dir.east": "east",
-  "config.jade.plugin_ferronexus.conduits": "Conduits in block"
+  "config.jade.plugin_ferronexus.conduits": "Conduits in block",
+  "imprinter.ferronexus.mode.select": "Select",
+  "imprinter.ferronexus.mode.copy": "Copy",
+  "imprinter.ferronexus.mode.copy_contents": "Copy with contents",
+  "imprinter.ferronexus.mode.paste": "Paste",
+  "imprinter.ferronexus.mode.apply_settings": "Apply settings",
+  "message.ferronexus.imprinter.mode": "Imprinter: %s",
+  "message.ferronexus.imprinter.corner": "Corner %s: %s %s %s",
+  "message.ferronexus.imprinter.need_selection": "Select an area first: two corners in Select mode",
+  "message.ferronexus.imprinter.too_big": "Area too large (max %s blocks per side, %s non-air blocks)",
+  "message.ferronexus.imprinter.copied": "Copied %s blocks (size %s×%s×%s)",
+  "message.ferronexus.imprinter.empty": "The Imprinter is empty — copy a structure first",
+  "message.ferronexus.imprinter.pasted": "Placed: %s, skipped (occupied or missing blocks): %s",
+  "message.ferronexus.imprinter.applied": "Settings applied to %s blocks"
 }

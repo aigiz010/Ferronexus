@@ -1,21 +1,251 @@
 package com.aigiz010.ferronexus.imprinter;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.TagValueInput;
 
 /**
  * Импринтер: копирует структуры, их содержимое и настройки.
- * TODO 0.7: выделение двух углов, сериализация в компонент данных, предпросмотр.
+ *  - Shift + ПКМ — сменить режим.
+ *  - «Выделение»: ПКМ по блоку — первый угол, ещё раз — второй.
+ *  - «Копирование»: ПКМ — запомнить блоки и их настройки (без содержимого).
+ *  - «Копирование с содержимым»: то же, вместе с предметами, жидкостями, энергией.
+ *  - «Вставка»: ПКМ по блоку — структура ставится рядом с ним (нижний угол у кликнутой грани).
+ *    В выживании расходует блоки из инвентаря, содержимое вставляется только в творческом.
+ *  - «Применить настройки»: ПКМ по блоку = нижний угол; настройки ложатся на такие же уже стоящие блоки.
  */
 public class ImprinterItem extends Item {
+    public static final int MAX_SIDE = 64;
+    public static final int MAX_BLOCKS = 8192;
+    private static final String[] CONTENT_KEYS = {"Items", "items", "Inventory", "Fluid", "fluid", "Tank", "Tanks", "Energy", "energy"};
+
     public ImprinterItem(Item.Properties props) {
         super(props.stacksTo(1));
     }
 
+    // ---------- Данные в предмете ----------
+    private static CompoundTag data(ItemStack stack) {
+        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+    }
+
+    private static void save(ItemStack stack, CompoundTag tag) {
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+    }
+
+    public static ImprintMode mode(ItemStack stack) {
+        ImprintMode[] v = ImprintMode.values();
+        return v[Math.floorMod(data(stack).getIntOr("Mode", 0), v.length)];
+    }
+
+    private static void tell(Player player, Component msg) {
+        if (player instanceof ServerPlayer sp) sp.sendSystemMessage(msg, true);
+    }
+
+    private static Component modeName(ImprintMode m) {
+        return Component.translatable("imprinter.ferronexus.mode." + m.name().toLowerCase());
+    }
+
+    private static void cycle(ItemStack stack, Player player) {
+        CompoundTag tag = data(stack);
+        int next = Math.floorMod(tag.getIntOr("Mode", 0) + 1, ImprintMode.values().length);
+        tag.putInt("Mode", next);
+        save(stack, tag);
+        tell(player, Component.translatable("message.ferronexus.imprinter.mode", modeName(ImprintMode.values()[next])));
+    }
+
+    @Override
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+        if (!player.isShiftKeyDown()) return InteractionResult.PASS;
+        if (!level.isClientSide()) cycle(player.getItemInHand(hand), player);
+        return InteractionResult.SUCCESS;
+    }
+
     @Override
     public InteractionResult useOn(UseOnContext ctx) {
-        // TODO: записать угол выделения / вставить схему
-        return InteractionResult.PASS;
+        Level level = ctx.getLevel();
+        Player player = ctx.getPlayer();
+        ItemStack stack = ctx.getItemInHand();
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (player != null && player.isShiftKeyDown()) {
+            cycle(stack, player);
+            return InteractionResult.SUCCESS;
+        }
+        BlockPos pos = ctx.getClickedPos();
+        switch (mode(stack)) {
+            case SELECT -> select(stack, player, pos);
+            case COPY -> copy(level, stack, player, false);
+            case COPY_CONTENTS -> copy(level, stack, player, true);
+            case PASTE -> paste(level, stack, player, pos.relative(ctx.getClickedFace()));
+            case APPLY_SETTINGS -> apply(level, stack, player, pos);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    // ---------- Выделение ----------
+    private static void select(ItemStack stack, Player player, BlockPos pos) {
+        CompoundTag tag = data(stack);
+        boolean first = !tag.getBooleanOr("HasA", false) || tag.getBooleanOr("HasB", false);
+        if (first) {
+            tag.putLong("A", pos.asLong());
+            tag.putBoolean("HasA", true);
+            tag.putBoolean("HasB", false);
+        } else {
+            tag.putLong("B", pos.asLong());
+            tag.putBoolean("HasB", true);
+        }
+        save(stack, tag);
+        tell(player, Component.translatable("message.ferronexus.imprinter.corner", first ? 1 : 2, pos.getX(), pos.getY(), pos.getZ()));
+    }
+
+    // ---------- Копирование ----------
+    private static void stripContents(CompoundTag t) {
+        for (String k : CONTENT_KEYS) t.remove(k);
+        for (int i = 0; i < 32; i++) t.remove("E" + i); // буферы энергии проводов
+    }
+
+    private static void copy(Level level, ItemStack stack, Player player, boolean contents) {
+        CompoundTag tag = data(stack);
+        if (!tag.getBooleanOr("HasA", false) || !tag.getBooleanOr("HasB", false)) {
+            tell(player, Component.translatable("message.ferronexus.imprinter.need_selection"));
+            return;
+        }
+        BlockPos a = BlockPos.of(tag.getLongOr("A", 0L)), b = BlockPos.of(tag.getLongOr("B", 0L));
+        BlockPos min = new BlockPos(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+        BlockPos max = new BlockPos(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
+        int sx = max.getX() - min.getX() + 1, sy = max.getY() - min.getY() + 1, sz = max.getZ() - min.getZ() + 1;
+        if (sx > MAX_SIDE || sy > MAX_SIDE || sz > MAX_SIDE) {
+            tell(player, Component.translatable("message.ferronexus.imprinter.too_big", MAX_SIDE, MAX_BLOCKS));
+            return;
+        }
+        ListTag list = new ListTag();
+        for (int x = 0; x < sx; x++) for (int y = 0; y < sy; y++) for (int z = 0; z < sz; z++) {
+            BlockPos p = min.offset(x, y, z);
+            BlockState st = level.getBlockState(p);
+            if (st.isAir()) continue;
+            if (list.size() >= MAX_BLOCKS) {
+                tell(player, Component.translatable("message.ferronexus.imprinter.too_big", MAX_SIDE, MAX_BLOCKS));
+                return;
+            }
+            CompoundTag e = new CompoundTag();
+            e.putInt("X", x);
+            e.putInt("Y", y);
+            e.putInt("Z", z);
+            e.put("S", NbtUtils.writeBlockState(st));
+            BlockEntity be = level.getBlockEntity(p);
+            if (be != null) {
+                CompoundTag t = be.saveCustomOnly(level.registryAccess());
+                if (!contents) stripContents(t);
+                e.put("T", t);
+            }
+            list.add(e);
+        }
+        tag.put("Blocks", list);
+        tag.putBoolean("Contents", contents);
+        tag.putInt("SX", sx);
+        tag.putInt("SY", sy);
+        tag.putInt("SZ", sz);
+        save(stack, tag);
+        tell(player, Component.translatable("message.ferronexus.imprinter.copied", list.size(), sx, sy, sz));
+    }
+
+    // ---------- Вставка ----------
+    private static boolean takeItem(Player player, BlockState st) {
+        if (player == null || player.getAbilities().instabuild) return true;
+        Item need = st.getBlock().asItem();
+        if (need == null || need == net.minecraft.world.item.Items.AIR) return false;
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack s = inv.getItem(i);
+            if (!s.isEmpty() && s.getItem() == need) {
+                s.shrink(1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void loadInto(Level level, BlockPos p, CompoundTag t) {
+        BlockEntity be = level.getBlockEntity(p);
+        if (be == null) return;
+        be.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), t));
+        be.setChanged();
+        BlockState st = level.getBlockState(p);
+        level.sendBlockUpdated(p, st, st, 3);
+    }
+
+    private static void paste(Level level, ItemStack stack, Player player, BlockPos origin) {
+        CompoundTag tag = data(stack);
+        ListTag list = tag.getListOrEmpty("Blocks");
+        if (list.isEmpty()) {
+            tell(player, Component.translatable("message.ferronexus.imprinter.empty"));
+            return;
+        }
+        boolean creative = player != null && player.getAbilities().instabuild;
+        var blocks = level.holderLookup(Registries.BLOCK);
+        int placed = 0, skipped = 0;
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag e = list.getCompoundOrEmpty(i);
+            BlockPos p = origin.offset(e.getIntOr("X", 0), e.getIntOr("Y", 0), e.getIntOr("Z", 0));
+            BlockState st = NbtUtils.readBlockState(blocks, e.getCompoundOrEmpty("S"));
+            if (st.isAir() || !level.getBlockState(p).canBeReplaced() || !takeItem(player, st)) {
+                skipped++;
+                continue;
+            }
+            level.setBlock(p, st, 3);
+            if (e.contains("T")) {
+                CompoundTag t = e.getCompoundOrEmpty("T").copy();
+                if (!creative) stripContents(t); // в выживании содержимое не размножаем
+                loadInto(level, p, t);
+            }
+            placed++;
+        }
+        tell(player, Component.translatable("message.ferronexus.imprinter.pasted", placed, skipped));
+    }
+
+    // ---------- Применить настройки ----------
+    private static void apply(Level level, ItemStack stack, Player player, BlockPos origin) {
+        ListTag list = data(stack).getListOrEmpty("Blocks");
+        if (list.isEmpty()) {
+            tell(player, Component.translatable("message.ferronexus.imprinter.empty"));
+            return;
+        }
+        var blocks = level.holderLookup(Registries.BLOCK);
+        int applied = 0;
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag e = list.getCompoundOrEmpty(i);
+            if (!e.contains("T")) continue;
+            BlockPos p = origin.offset(e.getIntOr("X", 0), e.getIntOr("Y", 0), e.getIntOr("Z", 0));
+            BlockState want = NbtUtils.readBlockState(blocks, e.getCompoundOrEmpty("S"));
+            if (level.getBlockState(p).getBlock() != want.getBlock()) continue;
+            BlockEntity be = level.getBlockEntity(p);
+            if (be == null) continue;
+            // Берём текущее содержимое блока и накладываем только настройки из схемы.
+            CompoundTag cur = be.saveCustomOnly(level.registryAccess());
+            CompoundTag set = e.getCompoundOrEmpty("T").copy();
+            stripContents(set);
+            for (String k : CONTENT_KEYS) if (cur.contains(k)) set.put(k, cur.get(k).copy());
+            for (int n = 0; n < 32; n++) if (cur.contains("E" + n)) set.put("E" + n, cur.get("E" + n).copy());
+            loadInto(level, p, set);
+            applied++;
+        }
+        tell(player, Component.translatable("message.ferronexus.imprinter.applied", applied));
     }
 }
