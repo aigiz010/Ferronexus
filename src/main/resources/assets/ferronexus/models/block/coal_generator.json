@@ -1,1 +1,1 @@
-{"parent": "minecraft:block/orientable", "textures": {"front": "minecraft:block/blast_furnace_front", "side": "minecraft:block/blast_furnace_side", "top": "minecraft:block/blast_furnace_top"}}
+{"parent": "minecraft:block/orientable_with_bottom", "textures": {"front": "ferronexus:block/coal_generator_front", "side": "ferronexus:block/machine_lv_side", "top": "ferronexus:block/machine_lv_top", "bottom": "ferronexus:block/machine_lv_bottom"}}
