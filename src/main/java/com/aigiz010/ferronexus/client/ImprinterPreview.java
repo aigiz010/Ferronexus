@@ -44,7 +44,9 @@ import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 public final class ImprinterPreview {
     private ImprinterPreview() {}
 
-    private static final Identifier WHITE = Identifier.fromNamespaceAndPath("minecraft", "textures/misc/white.png");
+    // Ровная светлая текстура из игры; берём один пиксель из середины -> получается сплошной цвет.
+    private static final Identifier WHITE = Identifier.fromNamespaceAndPath("minecraft", "textures/block/white_concrete.png");
+    private static final float U = 0.5f, V = 0.5f;
     private static final int FULL_BRIGHT = 0xF000F0;
     private static final int NO_OVERLAY = 10 << 16;
     private static final float E = 0.03f; // толщина рёбер рамки
@@ -189,11 +191,10 @@ public final class ImprinterPreview {
                 case 4 -> new float[][] {{x0, y0, z0}, {x0, y0, z1}, {x0, y1, z1}, {x0, y1, z0}};
                 default -> new float[][] {{x1, y0, z1}, {x1, y0, z0}, {x1, y1, z0}, {x1, y1, z1}};
             };
-            float[][] uv = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
             for (int i = 0; i < 4; i++) {
                 vc.addVertex(p, v[i][0], v[i][1], v[i][2])
                         .setColor(c)
-                        .setUv(uv[i][0], uv[i][1])
+                        .setUv(U, V)
                         .setOverlay(NO_OVERLAY)
                         .setLight(FULL_BRIGHT)
                         .setNormal(p, d[0], d[1], d[2]);
