@@ -45,7 +45,8 @@ import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
  * Подсветка Импринтера (только пока он в руке).
  *  - рамка выделения между углами;
  *  - «Вставка» — мигающий полупрозрачный призрак с настоящими текстурами блоков, проводов и труб
- *    (с учётом поворота на R); красным оттенком — где место занято;
+ *    (с учётом поворота на R вокруг точки опоры); красным оттенком — где место занято;
+ *  - жёлтая рамка — точка опоры (вокруг неё крутится структура);
  *  - «Применить настройки» — зелёным совпадающие блоки.
  *  - цель берётся с дальним прицелом (в 3 раза дальше).
  */
@@ -132,16 +133,21 @@ public final class ImprinterPreview {
                 final BlockPos origin = mode == ImprintMode.PASTE ? hit.getBlockPos().relative(hit.getDirection()) : hit.getBlockPos();
                 int rsx = Math.max(1, tag.getIntOr("SX", 1)), rsz = Math.max(1, tag.getIntOr("SZ", 1));
                 final int sy = Math.max(1, tag.getIntOr("SY", 1));
-                final int sx = (rot & 1) == 1 ? rsz : rsx, sz = (rot & 1) == 1 ? rsx : rsz;
+                int[] c0 = ImprinterItem.rotateXZ(0, 0, rsx, rsz, rot);
+                int[] c1 = ImprinterItem.rotateXZ(rsx - 1, rsz - 1, rsx, rsz, rot);
+                final int mnx = Math.min(c0[0], c1[0]), mxx = Math.max(c0[0], c1[0]) + 1;
+                final int mnz = Math.min(c0[1], c1[1]), mxz = Math.max(c0[1], c1[1]) + 1;
                 final boolean paste = mode == ImprintMode.PASTE;
                 final int boxEdge = argb((int) (140 + 100 * pulse), 255, 255, 255);
+                final int pivotEdge = argb((int) (170 + 85 * pulse), 255, 215, 40);
                 final List<Ghost> ghosts = cachedGhosts;
                 final Set<Long> cells = cachedCells;
                 final float ox = origin.getX(), oy = origin.getY(), oz = origin.getZ();
                 final int alpha = (int) (90 + 120 * pulse);
 
                 out.submitCustomGeometry(pose, flat, (p, vc) -> {
-                    frame(p, vc, ox - 0.02f, oy - 0.02f, oz - 0.02f, ox + sx + 0.02f, oy + sy + 0.02f, oz + sz + 0.02f, boxEdge);
+                    frame(p, vc, ox + mnx - 0.02f, oy - 0.02f, oz + mnz - 0.02f, ox + mxx + 0.02f, oy + sy + 0.02f, oz + mxz + 0.02f, boxEdge);
+                    frame(p, vc, ox - 0.05f, oy - 0.05f, oz - 0.05f, ox + 1.05f, oy + 1.05f, oz + 1.05f, pivotEdge);
                     int n = 0;
                     for (Ghost g : ghosts) {
                         if (paste && g.conduits() != null) continue;
