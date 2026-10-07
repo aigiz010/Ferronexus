@@ -49,11 +49,20 @@
   "imprinter.ferronexus.mode.paste": "Paste",
   "imprinter.ferronexus.mode.apply_settings": "Apply settings",
   "message.ferronexus.imprinter.mode": "Imprinter: %s",
+  "message.ferronexus.imprinter.mode_rotate": "Imprinter: %s  •  [%s] to rotate 90°",
+  "message.ferronexus.imprinter.rotated": "Paste rotation: %s°  •  [%s] to rotate again",
   "message.ferronexus.imprinter.corner": "Corner %s: %s %s %s",
   "message.ferronexus.imprinter.need_selection": "Select an area first: two corners in Select mode",
   "message.ferronexus.imprinter.too_big": "Area too large (max %s blocks per side, %s non-air blocks)",
   "message.ferronexus.imprinter.copied": "Copied %s blocks (size %s×%s×%s)",
   "message.ferronexus.imprinter.empty": "The Imprinter is empty — copy a structure first",
   "message.ferronexus.imprinter.pasted": "Placed: %s, skipped (occupied or missing blocks): %s",
-  "message.ferronexus.imprinter.applied": "Settings applied to %s blocks"
+  "message.ferronexus.imprinter.applied": "Settings applied to %s blocks",
+  "tooltip.ferronexus.imprinter.mode": "Mode: %s",
+  "tooltip.ferronexus.imprinter.rotation": "Paste rotation: %s°",
+  "tooltip.ferronexus.imprinter.hint_mode": "Shift + Right-click: change mode",
+  "tooltip.ferronexus.imprinter.hint_rotate": "[%s]: rotate paste 90°",
+  "key.ferronexus.imprinter_rotate": "Imprinter: rotate paste",
+  "key.category.ferronexus.main": "Ferronexus",
+  "key.categories.ferronexus.main": "Ferronexus"
 }

@@ -49,11 +49,20 @@
   "imprinter.ferronexus.mode.paste": "Вставка",
   "imprinter.ferronexus.mode.apply_settings": "Применить настройки",
   "message.ferronexus.imprinter.mode": "Импринтер: %s",
+  "message.ferronexus.imprinter.mode_rotate": "Импринтер: %s  •  [%s] — повернуть на 90°",
+  "message.ferronexus.imprinter.rotated": "Поворот вставки: %s°  •  [%s] — ещё на 90°",
   "message.ferronexus.imprinter.corner": "Угол %s: %s %s %s",
   "message.ferronexus.imprinter.need_selection": "Сначала выделите область: два угла в режиме «Выделение»",
   "message.ferronexus.imprinter.too_big": "Слишком большая область (до %s блоков по стороне, до %s непустых блоков)",
   "message.ferronexus.imprinter.copied": "Скопировано блоков: %s (размер %s×%s×%s)",
   "message.ferronexus.imprinter.empty": "Импринтер пуст — сначала скопируйте структуру",
   "message.ferronexus.imprinter.pasted": "Вставлено: %s, пропущено (место занято или нет блоков): %s",
-  "message.ferronexus.imprinter.applied": "Настройки применены к %s блокам"
+  "message.ferronexus.imprinter.applied": "Настройки применены к %s блокам",
+  "tooltip.ferronexus.imprinter.mode": "Режим: %s",
+  "tooltip.ferronexus.imprinter.rotation": "Поворот вставки: %s°",
+  "tooltip.ferronexus.imprinter.hint_mode": "Shift + ПКМ — сменить режим",
+  "tooltip.ferronexus.imprinter.hint_rotate": "[%s] — повернуть вставку на 90°",
+  "key.ferronexus.imprinter_rotate": "Импринтер: повернуть вставку",
+  "key.category.ferronexus.main": "Ferronexus",
+  "key.categories.ferronexus.main": "Ferronexus"
 }

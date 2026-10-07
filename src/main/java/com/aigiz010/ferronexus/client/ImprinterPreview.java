@@ -20,7 +20,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
@@ -34,26 +33,19 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 
 /**
- * Подсветка Импринтера (только пока он в руке):
- *  - рамка выделения между углами (или один угол, пока второй не выбран);
- *  - в режиме «Вставка» — мигающий прозрачный призрак структуры там, куда она встанет
- *    (красным — где место занято и блок не поставится);
- *  - в режиме «Применить настройки» — рамка области, куда лягут настройки.
+ * Подсветка Импринтера (только пока он в руке). Рисуется сплошным цветом, без текстур.
+ *  - рамка выделения между углами;
+ *  - «Вставка» — мигающий прозрачный призрак структуры (с учётом поворота на R), красным — где место занято;
+ *  - «Применить настройки» — зелёным совпадающие блоки.
  */
 @EventBusSubscriber(modid = Ferronexus.MOD_ID, value = Dist.CLIENT)
 public final class ImprinterPreview {
     private ImprinterPreview() {}
 
-    // Ровная светлая текстура из игры; берём один пиксель из середины -> получается сплошной цвет.
-    private static final Identifier WHITE = Identifier.fromNamespaceAndPath("minecraft", "textures/block/white_concrete.png");
-    private static final float U = 0.5f, V = 0.5f;
-    private static final int FULL_BRIGHT = 0xF000F0;
-    private static final int NO_OVERLAY = 10 << 16;
     private static final float E = 0.03f; // толщина рёбер рамки
 
     private record Ghost(int x, int y, int z, BlockState state) {}
 
-    // Кэш разобранной схемы: пересобираем только когда данные предмета изменились.
     private static CustomData cachedData;
     private static List<Ghost> cachedGhosts = List.of();
     private static Set<Long> cachedCells = Set.of();
@@ -71,19 +63,19 @@ public final class ImprinterPreview {
         CustomData cd = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         CompoundTag tag = cd.copyTag();
         ImprintMode mode = ImprinterItem.mode(stack);
+        int rot = ImprinterItem.rot(stack);
 
         Vec3 cam = mc.gameRenderer.mainCamera().position();
         PoseStack pose = event.getPoseStack();
         SubmitNodeCollector out = event.getSubmitNodeCollector();
-        RenderType type = RenderTypes.entityTranslucent(WHITE);
+        RenderType type = RenderTypes.debugQuads(); // только позиция + цвет, текстура не нужна
 
         double t = (System.currentTimeMillis() % 100000L) / 1000.0;
-        float pulse = (float) (0.5 + 0.5 * Math.sin(t * Math.PI * 2 / 1.2)); // 0..1, период 1.2 с
+        float pulse = (float) (0.5 + 0.5 * Math.sin(t * Math.PI * 2 / 1.2));
 
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);
 
-        // 1. Выделение (видно во всех режимах, ярче в режимах выделения/копирования).
         boolean hasA = tag.getBooleanOr("HasA", false), hasB = tag.getBooleanOr("HasB", false);
         if (hasA) {
             BlockPos a = BlockPos.of(tag.getLongOr("A", 0L));
@@ -104,13 +96,14 @@ public final class ImprinterPreview {
             });
         }
 
-        // 2. Предпросмотр вставки / применения настроек.
         if ((mode == ImprintMode.PASTE || mode == ImprintMode.APPLY_SETTINGS)
                 && mc.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK) {
-            refreshCache(cd, tag, level);
+            refreshCache(cd, tag, level, rot);
             if (!cachedGhosts.isEmpty()) {
                 final BlockPos origin = mode == ImprintMode.PASTE ? hit.getBlockPos().relative(hit.getDirection()) : hit.getBlockPos();
-                final int sx = Math.max(1, tag.getIntOr("SX", 1)), sy = Math.max(1, tag.getIntOr("SY", 1)), sz = Math.max(1, tag.getIntOr("SZ", 1));
+                int rsx = Math.max(1, tag.getIntOr("SX", 1)), rsz = Math.max(1, tag.getIntOr("SZ", 1));
+                final int sy = Math.max(1, tag.getIntOr("SY", 1));
+                final int sx = (rot & 1) == 1 ? rsz : rsx, sz = (rot & 1) == 1 ? rsx : rsz;
                 final boolean paste = mode == ImprintMode.PASTE;
                 final int boxEdge = argb((int) (140 + 100 * pulse), 255, 255, 255);
                 final List<Ghost> ghosts = cachedGhosts;
@@ -143,10 +136,11 @@ public final class ImprinterPreview {
         pose.popPose();
     }
 
-    private static void refreshCache(CustomData cd, CompoundTag tag, ClientLevel level) {
+    private static void refreshCache(CustomData cd, CompoundTag tag, ClientLevel level, int rot) {
         if (cd == cachedData) return;
         cachedData = cd;
         ListTag list = tag.getListOrEmpty("Blocks");
+        int sx = Math.max(1, tag.getIntOr("SX", 1)), sz = Math.max(1, tag.getIntOr("SZ", 1));
         var blocks = level.holderLookup(Registries.BLOCK);
         List<Ghost> g = new ArrayList<>(list.size());
         Set<Long> cells = new HashSet<>();
@@ -154,9 +148,10 @@ public final class ImprinterPreview {
             CompoundTag e = list.getCompoundOrEmpty(i);
             BlockState st = NbtUtils.readBlockState(blocks, e.getCompoundOrEmpty("S"));
             if (st.isAir()) continue;
-            int x = e.getIntOr("X", 0), y = e.getIntOr("Y", 0), z = e.getIntOr("Z", 0);
-            g.add(new Ghost(x, y, z, st));
-            cells.add(BlockPos.asLong(x, y, z));
+            int[] xz = ImprinterItem.rotateXZ(e.getIntOr("X", 0), e.getIntOr("Z", 0), sx, sz, rot);
+            int y = e.getIntOr("Y", 0);
+            g.add(new Ghost(xz[0], y, xz[1], st.rotate(ImprinterItem.rotation(rot))));
+            cells.add(BlockPos.asLong(xz[0], y, xz[1]));
         }
         cachedGhosts = g;
         cachedCells = cells;
@@ -166,7 +161,6 @@ public final class ImprinterPreview {
         return (Math.max(0, Math.min(255, a)) << 24) | (r << 16) | (g << 8) | b;
     }
 
-    /** Рамка из 12 тонких брусков. */
     private static void frame(PoseStack.Pose p, VertexConsumer vc, float x0, float y0, float z0, float x1, float y1, float z1, int c) {
         float[] xs = {x0, x1}, ys = {y0, y1}, zs = {z0, z1};
         for (float y : ys) for (float z : zs) cube(p, vc, x0 - E, y - E, z - E, x1 + E, y + E, z + E, c, null, 0);
@@ -176,7 +170,6 @@ public final class ImprinterPreview {
 
     private static final int[][] DIRS = {{0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {-1, 0, 0}, {1, 0, 0}};
 
-    /** Куб; если задан набор занятых ячеек, грани между соседними блоками схемы не рисуются. */
     private static void cube(PoseStack.Pose p, VertexConsumer vc, float x0, float y0, float z0, float x1, float y1, float z1,
                              int c, Set<Long> cells, long self) {
         BlockPos sp = cells == null ? null : BlockPos.of(self);
@@ -192,12 +185,7 @@ public final class ImprinterPreview {
                 default -> new float[][] {{x1, y0, z1}, {x1, y0, z0}, {x1, y1, z0}, {x1, y1, z1}};
             };
             for (int i = 0; i < 4; i++) {
-                vc.addVertex(p, v[i][0], v[i][1], v[i][2])
-                        .setColor(c)
-                        .setUv(U, V)
-                        .setOverlay(NO_OVERLAY)
-                        .setLight(FULL_BRIGHT)
-                        .setNormal(p, d[0], d[1], d[2]);
+                vc.addVertex(p, v[i][0], v[i][1], v[i][2]).setColor(c);
             }
         }
     }

@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -25,16 +26,17 @@ import net.minecraft.world.level.storage.TagValueInput;
 /**
  * Импринтер: копирует структуры, их содержимое и настройки.
  *  - Shift + ПКМ — сменить режим.
+ *  - R — повернуть вставку на 90° по часовой (вокруг вертикали).
  *  - «Выделение»: ПКМ по блоку — первый угол, ещё раз — второй.
  *  - «Копирование»: ПКМ — запомнить блоки и их настройки (без содержимого).
  *  - «Копирование с содержимым»: то же, вместе с предметами, жидкостями, энергией.
- *  - «Вставка»: ПКМ по блоку — структура ставится рядом с ним (нижний угол у кликнутой грани).
- *    В выживании расходует блоки из инвентаря, содержимое вставляется только в творческом.
+ *  - «Вставка»: ПКМ по блоку — структура ставится рядом с ним.
  *  - «Применить настройки»: ПКМ по блоку = нижний угол; настройки ложатся на такие же уже стоящие блоки.
  */
 public class ImprinterItem extends Item {
     public static final int MAX_SIDE = 64;
     public static final int MAX_BLOCKS = 8192;
+    public static final String ROTATE_KEY = "key.ferronexus.imprinter_rotate";
     private static final String[] CONTENT_KEYS = {"Items", "items", "Inventory", "Fluid", "fluid", "Tank", "Tanks", "Energy", "energy"};
 
     public ImprinterItem(Item.Properties props) {
@@ -55,6 +57,39 @@ public class ImprinterItem extends Item {
         return v[Math.floorMod(data(stack).getIntOr("Mode", 0), v.length)];
     }
 
+    /** Поворот схемы: 0..3 (шаг 90° по часовой). */
+    public static int rot(ItemStack stack) {
+        return Math.floorMod(data(stack).getIntOr("Rot", 0), 4);
+    }
+
+    public static Rotation rotation(int r) {
+        return switch (Math.floorMod(r, 4)) {
+            case 1 -> Rotation.CLOCKWISE_90;
+            case 2 -> Rotation.CLOCKWISE_180;
+            case 3 -> Rotation.COUNTERCLOCKWISE_90;
+            default -> Rotation.NONE;
+        };
+    }
+
+    /** Координаты (x, z) внутри схемы размером sx×sz после поворота; результат снова начинается с 0. */
+    public static int[] rotateXZ(int x, int z, int sx, int sz, int r) {
+        return switch (Math.floorMod(r, 4)) {
+            case 1 -> new int[] {sz - 1 - z, x};
+            case 2 -> new int[] {sx - 1 - x, sz - 1 - z};
+            case 3 -> new int[] {z, sx - 1 - x};
+            default -> new int[] {x, z};
+        };
+    }
+
+    /** Вызывается с сервера по нажатию R. */
+    public static void rotate(ItemStack stack, Player player) {
+        CompoundTag tag = data(stack);
+        int r = Math.floorMod(tag.getIntOr("Rot", 0) + 1, 4);
+        tag.putInt("Rot", r);
+        save(stack, tag);
+        tell(player, Component.translatable("message.ferronexus.imprinter.rotated", r * 90, Component.keybind(ROTATE_KEY)));
+    }
+
     private static void tell(Player player, Component msg) {
         if (player instanceof ServerPlayer sp) sp.sendSystemMessage(msg, true);
     }
@@ -68,7 +103,12 @@ public class ImprinterItem extends Item {
         int next = Math.floorMod(tag.getIntOr("Mode", 0) + 1, ImprintMode.values().length);
         tag.putInt("Mode", next);
         save(stack, tag);
-        tell(player, Component.translatable("message.ferronexus.imprinter.mode", modeName(ImprintMode.values()[next])));
+        ImprintMode m = ImprintMode.values()[next];
+        if (m == ImprintMode.PASTE || m == ImprintMode.APPLY_SETTINGS) {
+            tell(player, Component.translatable("message.ferronexus.imprinter.mode_rotate", modeName(m), Component.keybind(ROTATE_KEY)));
+        } else {
+            tell(player, Component.translatable("message.ferronexus.imprinter.mode", modeName(m)));
+        }
     }
 
     @Override
@@ -118,7 +158,7 @@ public class ImprinterItem extends Item {
     // ---------- Копирование ----------
     private static void stripContents(CompoundTag t) {
         for (String k : CONTENT_KEYS) t.remove(k);
-        for (int i = 0; i < 32; i++) t.remove("E" + i); // буферы энергии проводов
+        for (int i = 0; i < 32; i++) t.remove("E" + i);
     }
 
     private static void copy(Level level, ItemStack stack, Player player, boolean contents) {
@@ -162,6 +202,7 @@ public class ImprinterItem extends Item {
         tag.putInt("SX", sx);
         tag.putInt("SY", sy);
         tag.putInt("SZ", sz);
+        tag.putInt("Rot", 0);
         save(stack, tag);
         tell(player, Component.translatable("message.ferronexus.imprinter.copied", list.size(), sx, sy, sz));
     }
@@ -191,6 +232,12 @@ public class ImprinterItem extends Item {
         level.sendBlockUpdated(p, st, st, 3);
     }
 
+    private static BlockPos target(CompoundTag tag, CompoundTag e, BlockPos origin, int r) {
+        int sx = Math.max(1, tag.getIntOr("SX", 1)), sz = Math.max(1, tag.getIntOr("SZ", 1));
+        int[] xz = rotateXZ(e.getIntOr("X", 0), e.getIntOr("Z", 0), sx, sz, r);
+        return origin.offset(xz[0], e.getIntOr("Y", 0), xz[1]);
+    }
+
     private static void paste(Level level, ItemStack stack, Player player, BlockPos origin) {
         CompoundTag tag = data(stack);
         ListTag list = tag.getListOrEmpty("Blocks");
@@ -198,13 +245,15 @@ public class ImprinterItem extends Item {
             tell(player, Component.translatable("message.ferronexus.imprinter.empty"));
             return;
         }
+        int r = Math.floorMod(tag.getIntOr("Rot", 0), 4);
+        Rotation rotation = rotation(r);
         boolean creative = player != null && player.getAbilities().instabuild;
         var blocks = level.holderLookup(Registries.BLOCK);
         int placed = 0, skipped = 0;
         for (int i = 0; i < list.size(); i++) {
             CompoundTag e = list.getCompoundOrEmpty(i);
-            BlockPos p = origin.offset(e.getIntOr("X", 0), e.getIntOr("Y", 0), e.getIntOr("Z", 0));
-            BlockState st = NbtUtils.readBlockState(blocks, e.getCompoundOrEmpty("S"));
+            BlockPos p = target(tag, e, origin, r);
+            BlockState st = NbtUtils.readBlockState(blocks, e.getCompoundOrEmpty("S")).rotate(rotation);
             if (st.isAir() || !level.getBlockState(p).canBeReplaced() || !takeItem(player, st)) {
                 skipped++;
                 continue;
@@ -212,7 +261,7 @@ public class ImprinterItem extends Item {
             level.setBlock(p, st, 3);
             if (e.contains("T")) {
                 CompoundTag t = e.getCompoundOrEmpty("T").copy();
-                if (!creative) stripContents(t); // в выживании содержимое не размножаем
+                if (!creative) stripContents(t);
                 loadInto(level, p, t);
             }
             placed++;
@@ -222,22 +271,23 @@ public class ImprinterItem extends Item {
 
     // ---------- Применить настройки ----------
     private static void apply(Level level, ItemStack stack, Player player, BlockPos origin) {
-        ListTag list = data(stack).getListOrEmpty("Blocks");
+        CompoundTag tag = data(stack);
+        ListTag list = tag.getListOrEmpty("Blocks");
         if (list.isEmpty()) {
             tell(player, Component.translatable("message.ferronexus.imprinter.empty"));
             return;
         }
+        int r = Math.floorMod(tag.getIntOr("Rot", 0), 4);
         var blocks = level.holderLookup(Registries.BLOCK);
         int applied = 0;
         for (int i = 0; i < list.size(); i++) {
             CompoundTag e = list.getCompoundOrEmpty(i);
             if (!e.contains("T")) continue;
-            BlockPos p = origin.offset(e.getIntOr("X", 0), e.getIntOr("Y", 0), e.getIntOr("Z", 0));
+            BlockPos p = target(tag, e, origin, r);
             BlockState want = NbtUtils.readBlockState(blocks, e.getCompoundOrEmpty("S"));
             if (level.getBlockState(p).getBlock() != want.getBlock()) continue;
             BlockEntity be = level.getBlockEntity(p);
             if (be == null) continue;
-            // Берём текущее содержимое блока и накладываем только настройки из схемы.
             CompoundTag cur = be.saveCustomOnly(level.registryAccess());
             CompoundTag set = e.getCompoundOrEmpty("T").copy();
             stripContents(set);
