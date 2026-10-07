@@ -24,11 +24,25 @@ jobs:
         with:
           gradle-version: current
 
+      # Если версии из gradle.properties нет в репозитории NeoForge, берём последнюю доступную 26.3.x.
+      - name: Resolve NeoForge version
+        id: neo
+        shell: bash
+        run: |
+          wanted=$(grep '^neo_version=' gradle.properties | cut -d= -f2)
+          curl -fsSL https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml -o meta.xml || true
+          grep -oE '<version>[^<]+</version>' meta.xml | sed -E 's#</?version>##g' > versions.txt || true
+          grep -E '^26\.' versions.txt | tail -60 > versions26.txt || true
+          if grep -qx "$wanted" versions.txt; then v="$wanted"; else v=$(grep -E '^26\.3\.' versions.txt | tail -1); fi
+          [ -z "$v" ] && v=$(tail -1 versions.txt)
+          echo "wanted=$wanted resolved=$v" | tee neo.txt
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
       - name: Build
         shell: bash
         run: |
           set -o pipefail
-          gradle build --no-daemon --stacktrace 2>&1 | tee build.log
+          gradle build --no-daemon --stacktrace -Pneo_version=${{ steps.neo.outputs.version }} 2>&1 | tee build.log
 
       - name: Upload jar
         if: success()
@@ -37,15 +51,15 @@ jobs:
           name: ferronexus-jar
           path: build/libs/*.jar
 
-      # Лог сборки, список ошибок и готовый jar публикуются в ветку build-log,
-      # чтобы их можно было прочитать без доступа к интерфейсу Actions.
+      # Лог сборки, список ошибок и готовый jar публикуются в ветку build-log.
       - name: Publish build log
         if: always() && github.event_name != 'pull_request'
         shell: bash
         run: |
           mkdir -p /tmp/out
           [ -f build.log ] && cp build.log /tmp/out/build.log || echo "no log" > /tmp/out/build.log
-          grep -nE "error:|FAILED|What went wrong|Could not|Exception" /tmp/out/build.log | head -300 > /tmp/out/errors.txt || true
+          cp neo.txt versions26.txt /tmp/out/ 2>/dev/null || true
+          grep -nE "error:|warning: \[removal\]|FAILED|What went wrong|Could not|Exception" /tmp/out/build.log | head -300 > /tmp/out/errors.txt || true
           echo "status=${{ job.status }}" > /tmp/out/status.txt
           echo "commit=${{ github.sha }}" >> /tmp/out/status.txt
           echo "run=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> /tmp/out/status.txt
