@@ -1,0 +1,561 @@
+=== com.mojang.blaze3d.vertex.QuadInstance
+Compiled from "QuadInstance.java"
+public class com.mojang.blaze3d.vertex.QuadInstance {
+  public com.mojang.blaze3d.vertex.QuadInstance();
+  public int getColor(int);
+  public int getLightCoords(int);
+  public int getLightCoordsWithEmission(int, int);
+  public int overlayCoords();
+  public void setColor(int, int);
+  public void setLightCoords(int, int);
+  public void setColor(int);
+  public void setLightCoords(int);
+  public void setOverlayCoords(int);
+  public void multiplyColor(int);
+  public void scaleColor(float);
+}
+=== com.mojang.blaze3d.vertex.VertexConsumer
+Compiled from "VertexConsumer.java"
+public interface com.mojang.blaze3d.vertex.VertexConsumer extends net.neoforged.neoforge.client.extensions.IVertexConsumerExtension {
+  public abstract com.mojang.blaze3d.vertex.VertexConsumer addVertex(float, float, float);
+  public abstract com.mojang.blaze3d.vertex.VertexConsumer setColor(int, int, int, int);
+  public abstract com.mojang.blaze3d.vertex.VertexConsumer setColor(int);
+  public abstract com.mojang.blaze3d.vertex.VertexConsumer setUv(float, float);
+  public abstract com.mojang.blaze3d.vertex.VertexConsumer setUv1(int, int);
+  public abstract com.mojang.blaze3d.vertex.VertexConsumer setUv2(int, int);
+  public abstract com.mojang.blaze3d.vertex.VertexConsumer setUv3(float, float);
+  public abstract com.mojang.blaze3d.vertex.VertexConsumer setNormal(float, float, float);
+  public abstract com.mojang.blaze3d.vertex.VertexConsumer setLineWidth(float);
+  public default void addVertex(float, float, float, int, float, float, int, int, float, float, float);
+  public default com.mojang.blaze3d.vertex.VertexConsumer setColor(float, float, float, float);
+  public default com.mojang.blaze3d.vertex.VertexConsumer setLight(int);
+  public default com.mojang.blaze3d.vertex.VertexConsumer setOverlay(int);
+  public default void putBlockBakedQuad(float, float, float, net.minecraft.client.resources.model.geometry.BakedQuad, com.mojang.blaze3d.vertex.QuadInstance);
+  public default void putBakedQuad(com.mojang.blaze3d.vertex.PoseStack$Pose, net.minecraft.client.resources.model.geometry.BakedQuad, com.mojang.blaze3d.vertex.QuadInstance);
+  public default void putBakedQuadWithGlint(com.mojang.blaze3d.vertex.PoseStack$Pose, net.minecraft.client.resources.model.geometry.BakedQuad, com.mojang.blaze3d.vertex.QuadInstance, com.mojang.blaze3d.vertex.PoseStack$Pose);
+  public default com.mojang.blaze3d.vertex.VertexConsumer addVertex(org.joml.Vector3fc);
+  public default com.mojang.blaze3d.vertex.VertexConsumer addVertex(com.mojang.blaze3d.vertex.PoseStack$Pose, org.joml.Vector3fc);
+  public default com.mojang.blaze3d.vertex.VertexConsumer addVertex(com.mojang.blaze3d.vertex.PoseStack$Pose, float, float, float);
+  public default com.mojang.blaze3d.vertex.VertexConsumer addVertex(org.joml.Matrix4fc, float, float, float);
+  public default com.mojang.blaze3d.vertex.VertexConsumer addVertexWith2DPose(org.joml.Matrix3x2fc, float, float);
+  public default com.mojang.blaze3d.vertex.VertexConsumer setNormal(com.mojang.blaze3d.vertex.PoseStack$Pose, float, float, float);
+  public default com.mojang.blaze3d.vertex.VertexConsumer setNormal(com.mojang.blaze3d.vertex.PoseStack$Pose, org.joml.Vector3fc);
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockModelRotation$WithUvLock
+Compiled from "BlockModelRotation.java"
+public final class net.minecraft.client.renderer.block.dispatch.BlockModelRotation$WithUvLock extends java.lang.Record implements net.minecraft.client.renderer.block.dispatch.ModelState {
+  public net.minecraft.client.renderer.block.dispatch.BlockModelRotation$WithUvLock(net.minecraft.client.renderer.block.dispatch.BlockModelRotation);
+  public com.mojang.math.Transformation transformation();
+  public org.joml.Matrix4fc faceTransformation(net.minecraft.core.Direction);
+  public org.joml.Matrix4fc inverseFaceTransformation(net.minecraft.core.Direction);
+  public java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public net.minecraft.client.renderer.block.dispatch.BlockModelRotation parent();
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockModelRotation
+Compiled from "BlockModelRotation.java"
+public class net.minecraft.client.renderer.block.dispatch.BlockModelRotation implements net.minecraft.client.renderer.block.dispatch.ModelState {
+  public static final net.minecraft.client.renderer.block.dispatch.BlockModelRotation IDENTITY;
+  public com.mojang.math.Transformation transformation();
+  public static net.minecraft.client.renderer.block.dispatch.BlockModelRotation get(com.mojang.math.OctahedralGroup);
+  public net.minecraft.client.renderer.block.dispatch.ModelState withUvLock();
+  public java.lang.String toString();
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockStateModel$SimpleCachedUnbakedRoot
+Compiled from "BlockStateModel.java"
+public class net.minecraft.client.renderer.block.dispatch.BlockStateModel$SimpleCachedUnbakedRoot implements net.minecraft.client.renderer.block.dispatch.BlockStateModel$UnbakedRoot {
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModel$SimpleCachedUnbakedRoot(net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked);
+  public void resolveDependencies(net.minecraft.client.resources.model.ResolvableModel$Resolver);
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModel bake(net.minecraft.world.level.block.state.BlockState, net.minecraft.client.resources.model.ModelBaker);
+  public java.lang.Object visualEqualityGroup(net.minecraft.world.level.block.state.BlockState);
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked
+Compiled from "BlockStateModel.java"
+public interface net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked extends net.minecraft.client.resources.model.ResolvableModel {
+  public static final com.mojang.serialization.Codec<net.minecraft.util.random.Weighted<net.minecraft.client.renderer.block.dispatch.Variant>> ELEMENT_CODEC;
+  public static final com.mojang.serialization.Codec<com.mojang.datafixers.util.Either<net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel, net.minecraft.client.renderer.block.dispatch.SingleVariant$Unbaked>> SINGLE_MODEL_CODEC;
+  public static final com.mojang.serialization.Codec<net.minecraft.util.random.Weighted<com.mojang.datafixers.util.Either<net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel, net.minecraft.client.renderer.block.dispatch.SingleVariant$Unbaked>>> WEIGHTED_MODEL_CODEC;
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.WeightedVariants$Unbaked> HARDCODED_WEIGHTED_CODEC;
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked> CODEC;
+  public abstract net.minecraft.client.renderer.block.dispatch.BlockStateModel bake(net.minecraft.client.resources.model.ModelBaker);
+  public default net.minecraft.client.renderer.block.dispatch.BlockStateModel$UnbakedRoot asRoot();
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockStateModel$UnbakedRoot
+Compiled from "BlockStateModel.java"
+public interface net.minecraft.client.renderer.block.dispatch.BlockStateModel$UnbakedRoot extends net.minecraft.client.resources.model.ResolvableModel {
+  public abstract net.minecraft.client.renderer.block.dispatch.BlockStateModel bake(net.minecraft.world.level.block.state.BlockState, net.minecraft.client.resources.model.ModelBaker);
+  public abstract java.lang.Object visualEqualityGroup(net.minecraft.world.level.block.state.BlockState);
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockStateModel
+Compiled from "BlockStateModel.java"
+public interface net.minecraft.client.renderer.block.dispatch.BlockStateModel extends net.neoforged.neoforge.client.extensions.BlockStateModelExtension {
+  public abstract void collectParts(net.minecraft.util.RandomSource, java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart>);
+  public abstract net.minecraft.client.resources.model.sprite.Material$Baked particleMaterial();
+  public abstract int materialFlags();
+  public default boolean hasMaterialFlag(int);
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$MultiPartDefinition
+Compiled from "BlockStateModelDispatcher.java"
+public final class net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$MultiPartDefinition extends java.lang.Record {
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$MultiPartDefinition> CODEC;
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$MultiPartDefinition(java.util.List<net.minecraft.client.renderer.block.dispatch.multipart.Selector>);
+  public net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Unbaked instantiate(net.minecraft.world.level.block.state.StateDefinition<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.util.List<net.minecraft.client.renderer.block.dispatch.multipart.Selector> selectors();
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$SimpleModelSelectors
+Compiled from "BlockStateModelDispatcher.java"
+public final class net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$SimpleModelSelectors extends java.lang.Record {
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$SimpleModelSelectors> CODEC;
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$SimpleModelSelectors(java.util.Map<java.lang.String, net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked>);
+  public void instantiate(net.minecraft.world.level.block.state.StateDefinition<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>, java.util.function.Supplier<java.lang.String>, java.util.function.BiConsumer<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel$UnbakedRoot>);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.util.Map<java.lang.String, net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked> models();
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher
+Compiled from "BlockStateModelDispatcher.java"
+public final class net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher extends java.lang.Record {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher> VANILLA_CODEC;
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher> CODEC;
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher(java.util.Optional<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$SimpleModelSelectors>, java.util.Optional<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$MultiPartDefinition>);
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher(net.neoforged.neoforge.client.model.block.CustomBlockModelDefinition);
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher(java.util.Optional<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$SimpleModelSelectors>, java.util.Optional<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$MultiPartDefinition>, java.util.Optional<net.neoforged.neoforge.client.model.block.CustomBlockModelDefinition>);
+  public java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel$UnbakedRoot> instantiate(net.minecraft.world.level.block.state.StateDefinition<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>, java.util.function.Supplier<java.lang.String>);
+  public java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel$UnbakedRoot> instantiateVanilla(net.minecraft.world.level.block.state.StateDefinition<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState>, java.util.function.Supplier<java.lang.String>);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.util.Optional<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$SimpleModelSelectors> simpleModels();
+  public java.util.Optional<net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher$MultiPartDefinition> multiPart();
+  public java.util.Optional<net.neoforged.neoforge.client.model.block.CustomBlockModelDefinition> customDefinition();
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockStateModelPart$Unbaked
+Compiled from "BlockStateModelPart.java"
+public interface net.minecraft.client.renderer.block.dispatch.BlockStateModelPart$Unbaked extends net.minecraft.client.resources.model.ResolvableModel {
+  public abstract net.minecraft.client.renderer.block.dispatch.BlockStateModelPart bake(net.minecraft.client.resources.model.ModelBaker);
+}
+=== net.minecraft.client.renderer.block.dispatch.BlockStateModelPart
+Compiled from "BlockStateModelPart.java"
+public interface net.minecraft.client.renderer.block.dispatch.BlockStateModelPart extends net.neoforged.neoforge.client.extensions.BlockStateModelPartExtension {
+  public abstract java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> getQuads(net.minecraft.core.Direction);
+  public abstract boolean useAmbientOcclusion();
+  public abstract net.minecraft.client.resources.model.sprite.Material$Baked particleMaterial();
+  public abstract int materialFlags();
+}
+=== net.minecraft.client.renderer.block.dispatch.ModelState
+Compiled from "ModelState.java"
+public interface net.minecraft.client.renderer.block.dispatch.ModelState extends net.neoforged.neoforge.client.extensions.ModelStateExtension {
+  public static final org.joml.Matrix4fc NO_TRANSFORM;
+  public default com.mojang.math.Transformation transformation();
+  public default org.joml.Matrix4fc faceTransformation(net.minecraft.core.Direction);
+  public default org.joml.Matrix4fc inverseFaceTransformation(net.minecraft.core.Direction);
+}
+=== net.minecraft.client.renderer.block.dispatch.SingleVariant$Unbaked
+Compiled from "SingleVariant.java"
+public final class net.minecraft.client.renderer.block.dispatch.SingleVariant$Unbaked extends java.lang.Record implements net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.client.renderer.block.dispatch.SingleVariant$Unbaked> MAP_CODEC;
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.SingleVariant$Unbaked> CODEC;
+  public net.minecraft.client.renderer.block.dispatch.SingleVariant$Unbaked(net.minecraft.client.renderer.block.dispatch.Variant);
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModel bake(net.minecraft.client.resources.model.ModelBaker);
+  public void resolveDependencies(net.minecraft.client.resources.model.ResolvableModel$Resolver);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public net.minecraft.client.renderer.block.dispatch.Variant variant();
+}
+=== net.minecraft.client.renderer.block.dispatch.SingleVariant
+Compiled from "SingleVariant.java"
+public class net.minecraft.client.renderer.block.dispatch.SingleVariant implements net.minecraft.client.renderer.block.dispatch.BlockStateModel {
+  public net.minecraft.client.renderer.block.dispatch.SingleVariant(net.minecraft.client.renderer.block.dispatch.BlockStateModelPart);
+  public void collectParts(net.minecraft.util.RandomSource, java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart>);
+  public net.minecraft.client.resources.model.sprite.Material$Baked particleMaterial();
+  public int materialFlags();
+  public java.lang.Object createGeometryKey(net.minecraft.client.renderer.block.BlockAndTintGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
+}
+=== net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState
+Compiled from "Variant.java"
+public final class net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState extends java.lang.Record {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState> MAP_CODEC;
+  public static final net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState DEFAULT;
+  public net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState(com.mojang.math.Quadrant, com.mojang.math.Quadrant, com.mojang.math.Quadrant, boolean);
+  public net.minecraft.client.renderer.block.dispatch.ModelState asModelState();
+  public net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState withX(com.mojang.math.Quadrant);
+  public net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState withY(com.mojang.math.Quadrant);
+  public net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState withZ(com.mojang.math.Quadrant);
+  public net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState withUvLock(boolean);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public com.mojang.math.Quadrant x();
+  public com.mojang.math.Quadrant y();
+  public com.mojang.math.Quadrant z();
+  public boolean uvLock();
+}
+=== net.minecraft.client.renderer.block.dispatch.Variant
+Compiled from "Variant.java"
+public final class net.minecraft.client.renderer.block.dispatch.Variant extends java.lang.Record implements net.minecraft.client.renderer.block.dispatch.BlockStateModelPart$Unbaked {
+  public static final com.mojang.serialization.MapCodec<net.minecraft.client.renderer.block.dispatch.Variant> MAP_CODEC;
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.Variant> CODEC;
+  public net.minecraft.client.renderer.block.dispatch.Variant(net.minecraft.resources.Identifier);
+  public net.minecraft.client.renderer.block.dispatch.Variant(net.minecraft.resources.Identifier, net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState);
+  public net.minecraft.client.renderer.block.dispatch.Variant withXRot(com.mojang.math.Quadrant);
+  public net.minecraft.client.renderer.block.dispatch.Variant withYRot(com.mojang.math.Quadrant);
+  public net.minecraft.client.renderer.block.dispatch.Variant withZRot(com.mojang.math.Quadrant);
+  public net.minecraft.client.renderer.block.dispatch.Variant withUvLock(boolean);
+  public net.minecraft.client.renderer.block.dispatch.Variant withModel(net.minecraft.resources.Identifier);
+  public net.minecraft.client.renderer.block.dispatch.Variant withState(net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState);
+  public net.minecraft.client.renderer.block.dispatch.Variant with(net.minecraft.client.renderer.block.dispatch.VariantMutator);
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModelPart bake(net.minecraft.client.resources.model.ModelBaker);
+  public void resolveDependencies(net.minecraft.client.resources.model.ResolvableModel$Resolver);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public net.minecraft.resources.Identifier modelLocation();
+  public net.minecraft.client.renderer.block.dispatch.Variant$SimpleModelState modelState();
+}
+=== net.minecraft.client.renderer.block.dispatch.VariantMutator$VariantProperty
+Compiled from "VariantMutator.java"
+public interface net.minecraft.client.renderer.block.dispatch.VariantMutator$VariantProperty<T> {
+  public abstract net.minecraft.client.renderer.block.dispatch.Variant apply(net.minecraft.client.renderer.block.dispatch.Variant, T);
+  public default net.minecraft.client.renderer.block.dispatch.VariantMutator withValue(T);
+}
+=== net.minecraft.client.renderer.block.dispatch.VariantMutator
+Compiled from "VariantMutator.java"
+public interface net.minecraft.client.renderer.block.dispatch.VariantMutator extends java.util.function.UnaryOperator<net.minecraft.client.renderer.block.dispatch.Variant> {
+  public static final net.minecraft.client.renderer.block.dispatch.VariantMutator$VariantProperty<com.mojang.math.Quadrant> X_ROT;
+  public static final net.minecraft.client.renderer.block.dispatch.VariantMutator$VariantProperty<com.mojang.math.Quadrant> Y_ROT;
+  public static final net.minecraft.client.renderer.block.dispatch.VariantMutator$VariantProperty<com.mojang.math.Quadrant> Z_ROT;
+  public static final net.minecraft.client.renderer.block.dispatch.VariantMutator$VariantProperty<net.minecraft.resources.Identifier> MODEL;
+  public static final net.minecraft.client.renderer.block.dispatch.VariantMutator$VariantProperty<java.lang.Boolean> UV_LOCK;
+  public default net.minecraft.client.renderer.block.dispatch.VariantMutator then(net.minecraft.client.renderer.block.dispatch.VariantMutator);
+}
+=== net.minecraft.client.renderer.block.dispatch.VariantSelector
+Compiled from "VariantSelector.java"
+public class net.minecraft.client.renderer.block.dispatch.VariantSelector {
+  public net.minecraft.client.renderer.block.dispatch.VariantSelector();
+  public static <O, S extends net.minecraft.world.level.block.state.StateHolder<O, S>> java.util.function.Predicate<net.minecraft.world.level.block.state.StateHolder<O, S>> predicate(net.minecraft.world.level.block.state.StateDefinition<O, S>, java.lang.String);
+}
+=== net.minecraft.client.renderer.block.dispatch.WeightedVariants$Unbaked
+Compiled from "WeightedVariants.java"
+public final class net.minecraft.client.renderer.block.dispatch.WeightedVariants$Unbaked extends java.lang.Record implements net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked {
+  public net.minecraft.client.renderer.block.dispatch.WeightedVariants$Unbaked(net.minecraft.util.random.WeightedList<net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked>);
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModel bake(net.minecraft.client.resources.model.ModelBaker);
+  public void resolveDependencies(net.minecraft.client.resources.model.ResolvableModel$Resolver);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public net.minecraft.util.random.WeightedList<net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked> entries();
+}
+=== net.minecraft.client.renderer.block.dispatch.WeightedVariants
+Compiled from "WeightedVariants.java"
+public class net.minecraft.client.renderer.block.dispatch.WeightedVariants implements net.minecraft.client.renderer.block.dispatch.BlockStateModel,net.neoforged.neoforge.client.model.DynamicBlockStateModel {
+  public net.minecraft.client.renderer.block.dispatch.WeightedVariants(net.minecraft.util.random.WeightedList<net.minecraft.client.renderer.block.dispatch.BlockStateModel>);
+  public net.minecraft.client.resources.model.sprite.Material$Baked particleMaterial();
+  public int materialFlags();
+  public void collectParts(net.minecraft.client.renderer.block.BlockAndTintGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource, java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart>);
+  public java.lang.Object createGeometryKey(net.minecraft.client.renderer.block.BlockAndTintGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
+  public net.minecraft.client.resources.model.sprite.Material$Baked particleMaterial(net.minecraft.client.renderer.block.BlockAndTintGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState);
+  public int materialFlags(net.minecraft.client.renderer.block.BlockAndTintGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState);
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation
+Compiled from "CombinedCondition.java"
+public abstract class net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation extends java.lang.Enum<net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation> implements net.minecraft.util.StringRepresentable {
+  public static final net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation AND;
+  public static final net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation OR;
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation> CODEC;
+  public static net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation[] values();
+  public static net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation valueOf(java.lang.String);
+  public java.lang.String getSerializedName();
+  public abstract <V> java.util.function.Predicate<V> apply(java.util.List<java.util.function.Predicate<V>>);
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition
+Compiled from "CombinedCondition.java"
+public final class net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition extends java.lang.Record implements net.minecraft.client.renderer.block.dispatch.multipart.Condition {
+  public net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition(net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation, java.util.List<net.minecraft.client.renderer.block.dispatch.multipart.Condition>);
+  public <O, S extends net.minecraft.world.level.block.state.StateHolder<O, S>> java.util.function.Predicate<S> instantiate(net.minecraft.world.level.block.state.StateDefinition<O, S>);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public net.minecraft.client.renderer.block.dispatch.multipart.CombinedCondition$Operation operation();
+  public java.util.List<net.minecraft.client.renderer.block.dispatch.multipart.Condition> terms();
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.Condition
+Compiled from "Condition.java"
+public interface net.minecraft.client.renderer.block.dispatch.multipart.Condition {
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.multipart.Condition> CODEC;
+  public abstract <O, S extends net.minecraft.world.level.block.state.StateHolder<O, S>> java.util.function.Predicate<S> instantiate(net.minecraft.world.level.block.state.StateDefinition<O, S>);
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Term
+Compiled from "KeyValueCondition.java"
+public final class net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Term extends java.lang.Record {
+  public net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Term(java.lang.String, boolean);
+  public static net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Term parse(java.lang.String);
+  public java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String value();
+  public boolean negated();
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Terms
+Compiled from "KeyValueCondition.java"
+public final class net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Terms extends java.lang.Record {
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Terms> CODEC;
+  public net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Terms(java.util.List<net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Term>);
+  public static com.mojang.serialization.DataResult<net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Terms> parse(java.lang.String);
+  public java.lang.String toString();
+  public <O, S extends net.minecraft.world.level.block.state.StateHolder<O, S>, T extends java.lang.Comparable<T>> java.util.function.Predicate<S> instantiate(O, net.minecraft.world.level.block.state.properties.Property<T>);
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.util.List<net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Term> entries();
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition
+Compiled from "KeyValueCondition.java"
+public final class net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition extends java.lang.Record implements net.minecraft.client.renderer.block.dispatch.multipart.Condition {
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition> CODEC;
+  public net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition(java.util.Map<java.lang.String, net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Terms>);
+  public <O, S extends net.minecraft.world.level.block.state.StateHolder<O, S>> java.util.function.Predicate<S> instantiate(net.minecraft.world.level.block.state.StateDefinition<O, S>);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.util.Map<java.lang.String, net.minecraft.client.renderer.block.dispatch.multipart.KeyValueCondition$Terms> tests();
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$GeometryKey
+Compiled from "MultiPartModel.java"
+final class net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$GeometryKey extends java.lang.Record {
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.util.List<java.lang.Object> subKeys();
+  public net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel multiPart();
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Selector
+Compiled from "MultiPartModel.java"
+public final class net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Selector<T> extends java.lang.Record {
+  public net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Selector(java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState>, T);
+  public <S> net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Selector<S> with(S);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> condition();
+  public T model();
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$SharedBakedState
+Compiled from "MultiPartModel.java"
+final class net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$SharedBakedState {
+  public net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$SharedBakedState(java.util.List<net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Selector<net.minecraft.client.renderer.block.dispatch.BlockStateModel>>);
+  public java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModel> selectModels(net.minecraft.world.level.block.state.BlockState);
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Unbaked$1Key
+Compiled from "MultiPartModel.java"
+final class net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Unbaked$1Key extends java.lang.Record {
+  net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Unbaked$1Key(net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Unbaked, it.unimi.dsi.fastutil.ints.IntList);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Unbaked model();
+  public it.unimi.dsi.fastutil.ints.IntList selectors();
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Unbaked
+Compiled from "MultiPartModel.java"
+public class net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Unbaked implements net.minecraft.client.renderer.block.dispatch.BlockStateModel$UnbakedRoot {
+  public net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Unbaked(java.util.List<net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel$Selector<net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked>>);
+  public java.lang.Object visualEqualityGroup(net.minecraft.world.level.block.state.BlockState);
+  public void resolveDependencies(net.minecraft.client.resources.model.ResolvableModel$Resolver);
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModel bake(net.minecraft.world.level.block.state.BlockState, net.minecraft.client.resources.model.ModelBaker);
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel
+Compiled from "MultiPartModel.java"
+public class net.minecraft.client.renderer.block.dispatch.multipart.MultiPartModel implements net.minecraft.client.renderer.block.dispatch.BlockStateModel,net.neoforged.neoforge.client.model.DynamicBlockStateModel {
+  public net.minecraft.client.resources.model.sprite.Material$Baked particleMaterial();
+  public int materialFlags();
+  public void collectParts(net.minecraft.client.renderer.block.BlockAndTintGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource, java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart>);
+  public java.lang.Object createGeometryKey(net.minecraft.client.renderer.block.BlockAndTintGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState, net.minecraft.util.RandomSource);
+  public net.minecraft.client.resources.model.sprite.Material$Baked particleMaterial(net.minecraft.client.renderer.block.BlockAndTintGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState);
+  public int materialFlags(net.minecraft.client.renderer.block.BlockAndTintGetter, net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState);
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.Selector
+Compiled from "Selector.java"
+public final class net.minecraft.client.renderer.block.dispatch.multipart.Selector extends java.lang.Record {
+  public static final com.mojang.serialization.Codec<net.minecraft.client.renderer.block.dispatch.multipart.Selector> CODEC;
+  public net.minecraft.client.renderer.block.dispatch.multipart.Selector(java.util.Optional<net.minecraft.client.renderer.block.dispatch.multipart.Condition>, net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked);
+  public <O, S extends net.minecraft.world.level.block.state.StateHolder<O, S>> java.util.function.Predicate<S> instantiate(net.minecraft.world.level.block.state.StateDefinition<O, S>);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.util.Optional<net.minecraft.client.renderer.block.dispatch.multipart.Condition> condition();
+  public net.minecraft.client.renderer.block.dispatch.BlockStateModel$Unbaked variant();
+}
+=== net.minecraft.client.renderer.block.dispatch.multipart.package-info
+Compiled from "package-info.java"
+interface net.minecraft.client.renderer.block.dispatch.multipart.package-info {
+}
+=== net.minecraft.client.renderer.block.dispatch.package-info
+Compiled from "package-info.java"
+interface net.minecraft.client.renderer.block.dispatch.package-info {
+}
+=== net.minecraft.client.renderer.block.model.BlockDisplayContext
+Compiled from "BlockDisplayContext.java"
+public class net.minecraft.client.renderer.block.model.BlockDisplayContext {
+  public static net.minecraft.client.renderer.block.model.BlockDisplayContext create();
+}
+=== net.minecraft.client.renderer.block.model.BlockModel
+Compiled from "BlockModel.java"
+public interface net.minecraft.client.renderer.block.model.BlockModel {
+  public abstract void update(net.minecraft.client.renderer.block.BlockModelRenderState, net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.model.BlockDisplayContext, long);
+}
+=== net.minecraft.client.renderer.item.ItemModelResolver
+Compiled from "ItemModelResolver.java"
+public class net.minecraft.client.renderer.item.ItemModelResolver {
+  public net.minecraft.client.renderer.item.ItemModelResolver(net.minecraft.client.resources.model.ModelManager);
+  public void updateForLiving(net.minecraft.client.renderer.item.ItemStackRenderState, net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemDisplayContext, net.minecraft.world.entity.LivingEntity);
+  public void updateForNonLiving(net.minecraft.client.renderer.item.ItemStackRenderState, net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemDisplayContext, net.minecraft.world.entity.Entity);
+  public void updateForTopItem(net.minecraft.client.renderer.item.ItemStackRenderState, net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemDisplayContext, net.minecraft.world.level.Level, net.minecraft.world.entity.ItemOwner, int);
+  public void appendItemLayers(net.minecraft.client.renderer.item.ItemStackRenderState, net.minecraft.world.item.ItemStack, net.minecraft.world.item.ItemDisplayContext, net.minecraft.world.level.Level, net.minecraft.world.entity.ItemOwner, int);
+  public boolean shouldPlaySwapAnimation(net.minecraft.world.item.ItemStack);
+  public float swapAnimationScale(net.minecraft.world.item.ItemStack);
+}
+=== net.minecraft.client.renderer.rendertype.RenderType
+Compiled from "RenderType.java"
+public class net.minecraft.client.renderer.rendertype.RenderType {
+  public static final int BIG_BUFFER_SIZE;
+  public static final int SMALL_BUFFER_SIZE;
+  public static final int TRANSIENT_BUFFER_SIZE;
+  protected final java.lang.String name;
+  public static net.minecraft.client.renderer.rendertype.RenderType create(java.lang.String, net.minecraft.client.renderer.rendertype.RenderSetup);
+  public java.lang.String toString();
+  public boolean hasBlending();
+  public net.minecraft.client.renderer.rendertype.PreparedRenderType prepare();
+  public com.mojang.renderpearl.api.vertex.VertexFormat format();
+  public com.mojang.renderpearl.api.pipeline.PrimitiveTopology primitiveTopology();
+  public java.util.Optional<net.minecraft.client.renderer.rendertype.RenderType> outline();
+  public boolean isOutline();
+  public com.mojang.renderpearl.api.pipeline.RenderPipeline pipeline();
+  public boolean affectsCrumbling();
+  public boolean canConsolidateConsecutiveGeometry();
+  public boolean sortOnUpload();
+  public boolean forceSolidModelPhase();
+}
+=== net.minecraft.client.renderer.texture.TextureAtlas
+Compiled from "TextureAtlas.java"
+public class net.minecraft.client.renderer.texture.TextureAtlas extends net.minecraft.client.renderer.texture.AbstractTexture implements net.minecraft.client.renderer.texture.TickableTexture,net.minecraft.client.renderer.texture.Dumpable {
+  public static final net.minecraft.resources.Identifier LOCATION_BLOCKS;
+  public static final net.minecraft.resources.Identifier LOCATION_ITEMS;
+  public static final net.minecraft.resources.Identifier LOCATION_PARTICLES;
+  public net.minecraft.client.renderer.texture.TextureAtlas(net.minecraft.resources.Identifier);
+  public void upload(net.minecraft.client.renderer.texture.SpriteLoader$Preparations);
+  public void dumpContents(net.minecraft.resources.Identifier, java.nio.file.Path) throws java.io.IOException;
+  public void cycleAnimationFrames();
+  public void tick();
+  public net.minecraft.client.renderer.texture.TextureAtlasSprite getSprite(net.minecraft.resources.Identifier);
+  public net.minecraft.client.renderer.texture.TextureAtlasSprite missingSprite();
+  public void clearTextureData();
+  protected void releaseTextures();
+  public void close();
+  public net.minecraft.resources.Identifier location();
+  public int maxSupportedTextureSize();
+  int getWidth();
+  int getHeight();
+  public java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.renderer.texture.TextureAtlasSprite> getTextures();
+}
+=== net.minecraft.client.resources.model.ModelManager$ReloadState
+Compiled from "ModelManager.java"
+final class net.minecraft.client.resources.model.ModelManager$ReloadState extends java.lang.Record {
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public net.minecraft.client.resources.model.ModelBakery$BakingResult bakedModels();
+  public it.unimi.dsi.fastutil.objects.Object2IntMap<net.minecraft.world.level.block.state.BlockState> modelGroups();
+  public java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel> blockStateModels();
+  public java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.model.BlockModel> blockModels();
+  public java.util.Map<net.minecraft.world.level.material.Fluid, net.minecraft.client.renderer.block.FluidModel> fluidModels();
+  public net.minecraft.client.model.geom.EntityModelSet entityModelSet();
+}
+=== net.minecraft.client.resources.model.ModelManager$ResolvedModels
+Compiled from "ModelManager.java"
+final class net.minecraft.client.resources.model.ModelManager$ResolvedModels extends java.lang.Record {
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public net.minecraft.client.resources.model.ResolvedModel missing();
+  public java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.resources.model.ResolvedModel> models();
+}
+=== net.minecraft.client.resources.model.ModelManager
+Compiled from "ModelManager.java"
+public class net.minecraft.client.resources.model.ModelManager implements net.minecraft.server.packs.resources.PreparableReloadListener {
+  public net.minecraft.client.resources.model.ModelManager(net.minecraft.client.color.block.BlockColors, net.minecraft.client.resources.model.sprite.AtlasManager, net.minecraft.client.renderer.PlayerSkinRenderCache);
+  public net.minecraft.client.renderer.item.ItemModel getItemModel(net.minecraft.resources.Identifier);
+  public net.minecraft.client.renderer.item.ClientItem$Properties getItemProperties(net.minecraft.resources.Identifier);
+  public net.minecraft.client.renderer.block.BlockStateModelSet getBlockStateModelSet();
+  public net.minecraft.client.renderer.block.BlockModelSet getBlockModelSet();
+  public net.minecraft.client.renderer.block.FluidStateModelSet getFluidStateModelSet();
+  public final java.util.concurrent.CompletableFuture<java.lang.Void> reload(net.minecraft.server.packs.resources.PreparableReloadListener$SharedState, java.util.concurrent.Executor, net.minecraft.server.packs.resources.PreparableReloadListener$PreparationBarrier, java.util.concurrent.Executor);
+  public boolean requiresRender(net.minecraft.world.level.block.state.BlockState, net.minecraft.world.level.block.state.BlockState);
+  public java.util.function.Supplier<net.minecraft.client.model.geom.EntityModelSet> entityModels();
+  public net.minecraft.client.resources.model.ModelBakery getModelBakery();
+  public <T> T getStandaloneModel(net.neoforged.neoforge.client.model.standalone.StandaloneModelKey<T>);
+  public net.minecraft.client.resources.model.ModelBakery$MissingModels getMissingModels();
+}
+=== net.minecraft.client.resources.model.geometry.BakedQuad$MaterialFlags
+Compiled from "BakedQuad.java"
+public interface net.minecraft.client.resources.model.geometry.BakedQuad$MaterialFlags extends java.lang.annotation.Annotation {
+}
+=== net.minecraft.client.resources.model.geometry.BakedQuad$MaterialInfo
+Compiled from "BakedQuad.java"
+public final class net.minecraft.client.resources.model.geometry.BakedQuad$MaterialInfo extends java.lang.Record {
+  public net.minecraft.client.resources.model.geometry.BakedQuad$MaterialInfo(net.minecraft.client.renderer.texture.TextureAtlasSprite, net.minecraft.client.renderer.chunk.ChunkSectionLayer, net.minecraft.client.renderer.rendertype.RenderType, net.minecraft.client.renderer.rendertype.RenderType, net.minecraft.client.renderer.rendertype.RenderType, int, net.minecraft.core.Direction, int);
+  public net.minecraft.client.resources.model.geometry.BakedQuad$MaterialInfo(net.minecraft.client.renderer.texture.TextureAtlasSprite, net.minecraft.client.renderer.chunk.ChunkSectionLayer, net.minecraft.client.renderer.rendertype.RenderType, net.minecraft.client.renderer.rendertype.RenderType, net.minecraft.client.renderer.rendertype.RenderType, int, net.minecraft.core.Direction, int, boolean);
+  public static net.minecraft.client.resources.model.geometry.BakedQuad$MaterialInfo of(net.minecraft.client.resources.model.sprite.Material$Baked, com.mojang.blaze3d.platform.Transparency, int, net.minecraft.core.Direction, int);
+  public static net.minecraft.client.resources.model.geometry.BakedQuad$MaterialInfo of(net.minecraft.client.resources.model.sprite.Material$Baked, com.mojang.blaze3d.platform.Transparency, int, net.minecraft.core.Direction, int, boolean);
+  public boolean isTinted();
+  public int flags();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public net.minecraft.client.renderer.texture.TextureAtlasSprite sprite();
+  public net.minecraft.client.renderer.chunk.ChunkSectionLayer layer();
+  public net.minecraft.client.renderer.rendertype.RenderType itemRenderType();
+  public net.minecraft.client.renderer.rendertype.RenderType itemGlintRenderType();
+  public net.minecraft.client.renderer.rendertype.RenderType itemGlintSpecialRenderType();
+  public int tintIndex();
+  public net.minecraft.core.Direction shadeDirectionOverride();
+  public int lightEmission();
+  public boolean ambientOcclusion();
+}
+=== net.minecraft.client.resources.model.geometry.BakedQuad
+Compiled from "BakedQuad.java"
+public final class net.minecraft.client.resources.model.geometry.BakedQuad extends java.lang.Record {
+  public static final int VERTEX_COUNT;
+  public static final int FLAG_TRANSLUCENT;
+  public static final int FLAG_ANIMATED;
+  public net.minecraft.client.resources.model.geometry.BakedQuad(org.joml.Vector3fc, org.joml.Vector3fc, org.joml.Vector3fc, org.joml.Vector3fc, long, long, long, long, net.minecraft.core.Direction, net.minecraft.client.resources.model.geometry.BakedQuad$MaterialInfo);
+  public net.minecraft.client.resources.model.geometry.BakedQuad(org.joml.Vector3fc, org.joml.Vector3fc, org.joml.Vector3fc, org.joml.Vector3fc, long, long, long, long, net.minecraft.core.Direction, net.minecraft.client.resources.model.geometry.BakedQuad$MaterialInfo, net.neoforged.neoforge.client.model.quad.BakedNormals, net.neoforged.neoforge.client.model.quad.BakedColors);
+  public org.joml.Vector3fc position(int);
+  public long packedUV(int);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public org.joml.Vector3fc position0();
+  public org.joml.Vector3fc position1();
+  public org.joml.Vector3fc position2();
+  public org.joml.Vector3fc position3();
+  public long packedUV0();
+  public long packedUV1();
+  public long packedUV2();
+  public long packedUV3();
+  public net.minecraft.core.Direction direction();
+  public net.minecraft.client.resources.model.geometry.BakedQuad$MaterialInfo materialInfo();
+  public net.neoforged.neoforge.client.model.quad.BakedNormals bakedNormals();
+  public net.neoforged.neoforge.client.model.quad.BakedColors bakedColors();
+}
+=== net.neoforged.neoforge.client.extensions.IVertexConsumerExtension
+Compiled from "IVertexConsumerExtension.java"
+public interface net.neoforged.neoforge.client.extensions.IVertexConsumerExtension {
+  public default com.mojang.blaze3d.vertex.VertexConsumer misc(com.mojang.renderpearl.api.vertex.VertexFormatElement, int...);
+  public default void putMutableQuad(com.mojang.blaze3d.vertex.PoseStack$Pose, net.neoforged.neoforge.client.model.quad.MutableQuad, com.mojang.blaze3d.vertex.QuadInstance);
+  public default void applyBakedNormals(org.joml.Vector3f, net.neoforged.neoforge.client.model.quad.BakedNormals, int, org.joml.Matrix3f);
+}

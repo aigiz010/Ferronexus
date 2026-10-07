@@ -1,0 +1,187 @@
+base=https://maven.neoforged.net/releases/org/appliedenergistics/appliedenergistics2
+26.1.1-alpha
+26.1.2-alpha
+26.1.3-alpha
+26.1.4-alpha
+26.1.5-alpha
+26.1.6-alpha
+26.1.7-alpha
+26.1.8-alpha
+26.1.9-alpha
+26.1.10-beta
+26.1.11-beta
+26.1.12-beta
+26.1.13-beta
+26.2.1-alpha
+26.3.1-alpha
+chosen=26.3.1-alpha
+total 8220
+drwxr-xr-x 2 runner runner    4096 Oct  7 14:31 .
+drwxr-xr-x 9 runner runner    4096 Oct  7 14:31 ..
+-rw-r--r-- 1 runner runner    1511 Oct  7 14:31 meta.xml
+-rw-r--r-- 1 runner runner 8397266 Oct  7 14:31 sn.jar
+-rw-r--r-- 1 runner runner     195 Oct  7 14:31 vers.txt
+appeng/api/AECapabilities.class
+appeng/api/networking/GridHelper.class
+appeng/api/networking/IInWorldGridNodeHost.class
+appeng/api/parts/RegisterPartCapabilitiesEvent$BlockCapabilityRegistration.class
+appeng/api/parts/RegisterPartCapabilitiesEvent.class
+appeng/api/parts/RegisterPartCapabilitiesEventInternal.class
+=== appeng.api.AECapabilities
+Compiled from "AECapabilities.java"
+public final class appeng.api.AECapabilities {
+  public static net.neoforged.neoforge.capabilities.BlockCapability<appeng.api.storage.MEStorage, net.minecraft.core.Direction> ME_STORAGE;
+  public static net.neoforged.neoforge.capabilities.BlockCapability<appeng.api.implementations.blockentities.ICraftingMachine, net.minecraft.core.Direction> CRAFTING_MACHINE;
+  public static net.neoforged.neoforge.capabilities.BlockCapability<appeng.api.behaviors.GenericInternalInventory, net.minecraft.core.Direction> GENERIC_INTERNAL_INV;
+  public static net.neoforged.neoforge.capabilities.BlockCapability<appeng.api.networking.IInWorldGridNodeHost, java.lang.Void> IN_WORLD_GRID_NODE_HOST;
+  public static net.neoforged.neoforge.capabilities.BlockCapability<appeng.api.implementations.blockentities.ICrankable, net.minecraft.core.Direction> CRANKABLE;
+  static {};
+}
+=== appeng.api.networking.GridFlags
+Compiled from "GridFlags.java"
+public final class appeng.api.networking.GridFlags extends java.lang.Enum<appeng.api.networking.GridFlags> {
+  public static final appeng.api.networking.GridFlags REQUIRE_CHANNEL;
+  public static final appeng.api.networking.GridFlags COMPRESSED_CHANNEL;
+  public static final appeng.api.networking.GridFlags CANNOT_CARRY;
+  public static final appeng.api.networking.GridFlags CANNOT_CARRY_COMPRESSED;
+  public static final appeng.api.networking.GridFlags DENSE_CAPACITY;
+  public static final appeng.api.networking.GridFlags MULTIBLOCK;
+  public static final appeng.api.networking.GridFlags PREFERRED;
+  public static appeng.api.networking.GridFlags[] values();
+  public static appeng.api.networking.GridFlags valueOf(java.lang.String);
+  static {};
+}
+=== appeng.api.networking.GridHelper
+Compiled from "GridHelper.java"
+public final class appeng.api.networking.GridHelper {
+  public static <T extends net.minecraft.world.level.block.entity.BlockEntity> void onFirstTick(T, java.util.function.Consumer<? super T>);
+  public static <T extends appeng.api.networking.events.GridEvent> void addEventHandler(java.lang.Class<T>, java.util.function.BiConsumer<appeng.api.networking.IGrid, T>);
+  public static <T extends appeng.api.networking.events.GridEvent, C extends appeng.api.networking.IGridService> void addGridServiceEventHandler(java.lang.Class<T>, java.lang.Class<C>, java.util.function.BiConsumer<C, T>);
+  public static <T extends appeng.api.networking.events.GridEvent, C> void addNodeOwnerEventHandler(java.lang.Class<T>, java.lang.Class<C>, java.util.function.BiConsumer<C, T>);
+  public static <T extends appeng.api.networking.events.GridEvent, C> void addNodeOwnerEventHandler(java.lang.Class<T>, java.lang.Class<C>, java.util.function.Consumer<C>);
+  public static appeng.api.networking.IInWorldGridNodeHost getNodeHost(net.minecraft.world.level.Level, net.minecraft.core.BlockPos);
+  public static appeng.api.networking.IGridNode getExposedNode(net.minecraft.world.level.Level, net.minecraft.core.BlockPos, net.minecraft.core.Direction);
+  public static <T> appeng.api.networking.IManagedGridNode createManagedNode(T, appeng.api.networking.IGridNodeListener<T>);
+  public static appeng.api.networking.IGridConnection createConnection(appeng.api.networking.IGridNode, appeng.api.networking.IGridNode);
+}
+=== appeng.api.networking.IGridConnection
+Compiled from "IGridConnection.java"
+public interface appeng.api.networking.IGridConnection {
+  public abstract appeng.api.networking.IGridNode getOtherSide(appeng.api.networking.IGridNode);
+  public abstract boolean isInWorld();
+  public abstract net.minecraft.core.Direction getDirection(appeng.api.networking.IGridNode);
+  public abstract void destroy();
+  public abstract appeng.api.networking.IGridNode a();
+  public abstract appeng.api.networking.IGridNode b();
+  public abstract int getUsedChannels();
+}
+=== appeng.api.networking.IGridConnectionVisitor
+Compiled from "IGridConnectionVisitor.java"
+public interface appeng.api.networking.IGridConnectionVisitor extends appeng.api.networking.IGridVisitor {
+  public abstract void visitConnection(appeng.api.networking.IGridConnection);
+}
+=== appeng.api.networking.IGridNode
+Compiled from "IGridNode.java"
+public interface appeng.api.networking.IGridNode {
+  public abstract <T extends appeng.api.networking.IGridNodeService> T getService(java.lang.Class<T>);
+  public abstract java.lang.Object getOwner();
+  public abstract void beginVisit(appeng.api.networking.IGridVisitor);
+  public abstract appeng.api.networking.IGrid getGrid();
+  public abstract net.minecraft.server.level.ServerLevel getLevel();
+  public abstract java.util.Set<net.minecraft.core.Direction> getConnectedSides();
+  public abstract java.util.Map<net.minecraft.core.Direction, appeng.api.networking.IGridConnection> getInWorldConnections();
+  public abstract java.util.List<appeng.api.networking.IGridConnection> getConnections();
+  public default boolean isActive();
+  public default boolean isOnline();
+  public abstract boolean hasGridBooted();
+  public abstract boolean isPowered();
+  public abstract boolean meetsChannelRequirements();
+  public abstract boolean hasFlag(appeng.api.networking.GridFlags);
+  public abstract int getOwningPlayerId();
+  public abstract java.util.UUID getOwningPlayerProfileId();
+  public abstract double getIdlePowerUsage();
+  public abstract appeng.api.stacks.AEItemKey getVisualRepresentation();
+  public abstract appeng.api.util.AEColor getGridColor();
+  public abstract void fillCrashReportCategory(net.minecraft.CrashReportCategory);
+  public abstract int getMaxChannels();
+  public abstract int getUsedChannels();
+}
+=== appeng.api.networking.IGridNodeListener$State
+Compiled from "IGridNodeListener.java"
+public final class appeng.api.networking.IGridNodeListener$State extends java.lang.Enum<appeng.api.networking.IGridNodeListener$State> {
+  public static final appeng.api.networking.IGridNodeListener$State POWER;
+  public static final appeng.api.networking.IGridNodeListener$State CHANNEL;
+  public static final appeng.api.networking.IGridNodeListener$State GRID_BOOT;
+  public static appeng.api.networking.IGridNodeListener$State[] values();
+  public static appeng.api.networking.IGridNodeListener$State valueOf(java.lang.String);
+  static {};
+}
+=== appeng.api.networking.IGridNodeListener
+Compiled from "IGridNodeListener.java"
+public interface appeng.api.networking.IGridNodeListener<T> {
+  public abstract void onSaveChanges(T, appeng.api.networking.IGridNode);
+  public default void onInWorldConnectionChanged(T, appeng.api.networking.IGridNode);
+  public default void onOwnerChanged(T, appeng.api.networking.IGridNode);
+  public default void onGridChanged(T, appeng.api.networking.IGridNode);
+  public default void onStateChanged(T, appeng.api.networking.IGridNode, appeng.api.networking.IGridNodeListener$State);
+}
+=== appeng.api.networking.IGridNodeService
+Compiled from "IGridNodeService.java"
+public interface appeng.api.networking.IGridNodeService {
+}
+=== appeng.api.networking.IInWorldGridNodeHost
+Compiled from "IInWorldGridNodeHost.java"
+public interface appeng.api.networking.IInWorldGridNodeHost {
+  public abstract appeng.api.networking.IGridNode getGridNode(net.minecraft.core.Direction);
+  public default appeng.api.util.AECableType getCableConnectionType(net.minecraft.core.Direction);
+}
+=== appeng.api.networking.IManagedGridNode
+Compiled from "IManagedGridNode.java"
+public interface appeng.api.networking.IManagedGridNode extends net.neoforged.neoforge.common.util.ValueIOSerializable {
+  public abstract void destroy();
+  public abstract void create(net.minecraft.world.level.Level, net.minecraft.core.BlockPos);
+  public abstract void deserialize(net.minecraft.world.level.storage.ValueInput);
+  public abstract void serialize(net.minecraft.world.level.storage.ValueOutput);
+  public default boolean ifPresent(java.util.function.Consumer<appeng.api.networking.IGrid>);
+  public default boolean ifPresent(java.util.function.BiConsumer<appeng.api.networking.IGrid, appeng.api.networking.IGridNode>);
+  public default appeng.api.networking.IGrid getGrid();
+  public abstract appeng.api.networking.IManagedGridNode setFlags(appeng.api.networking.GridFlags...);
+  public abstract appeng.api.networking.IManagedGridNode setExposedOnSides(java.util.Set<net.minecraft.core.Direction>);
+  public abstract appeng.api.networking.IManagedGridNode setIdlePowerUsage(double);
+  public abstract appeng.api.networking.IManagedGridNode setVisualRepresentation(appeng.api.stacks.AEItemKey);
+  public default appeng.api.networking.IManagedGridNode setVisualRepresentation(net.minecraft.world.item.ItemStack);
+  public default appeng.api.networking.IManagedGridNode setVisualRepresentation(net.minecraft.world.level.ItemLike);
+  public abstract appeng.api.networking.IManagedGridNode setInWorldNode(boolean);
+  public abstract appeng.api.networking.IManagedGridNode setTagName(java.lang.String);
+  public abstract appeng.api.networking.IManagedGridNode setGridColor(appeng.api.util.AEColor);
+  public abstract <T extends appeng.api.networking.IGridNodeService> appeng.api.networking.IManagedGridNode addService(java.lang.Class<T>, T);
+  public abstract boolean isReady();
+  public abstract boolean isActive();
+  public abstract boolean isOnline();
+  public abstract boolean isPowered();
+  public abstract boolean hasGridBooted();
+  public abstract void setOwningPlayerId(int);
+  public abstract void setOwningPlayer(net.minecraft.world.entity.player.Player);
+  public abstract appeng.api.networking.IGridNode getNode();
+}
+=== appeng.api.util.AECableType
+Compiled from "AECableType.java"
+public final class appeng.api.util.AECableType extends java.lang.Enum<appeng.api.util.AECableType> {
+  public static final appeng.api.util.AECableType NONE;
+  public static final appeng.api.util.AECableType GLASS;
+  public static final appeng.api.util.AECableType COVERED;
+  public static final appeng.api.util.AECableType SMART;
+  public static final appeng.api.util.AECableType DENSE_COVERED;
+  public static final appeng.api.util.AECableType DENSE_SMART;
+  public static final appeng.api.util.AECableType[] VALIDCABLES;
+  public static appeng.api.util.AECableType[] values();
+  public static appeng.api.util.AECableType valueOf(java.lang.String);
+  public appeng.api.util.AECableSize size();
+  public appeng.api.util.AECableVariant variant();
+  public boolean isValid();
+  public boolean isDense();
+  public boolean isSmart();
+  public static appeng.api.util.AECableType min(appeng.api.util.AECableType, appeng.api.util.AECableType);
+  public static appeng.api.util.AECableType max(appeng.api.util.AECableType, appeng.api.util.AECableType);
+  static {};
+}
