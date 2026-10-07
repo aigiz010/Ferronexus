@@ -2,8 +2,12 @@ name: Build
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -21,7 +25,10 @@ jobs:
           gradle-version: current
 
       - name: Build
-        run: gradle build --no-daemon --stacktrace
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle build --no-daemon --stacktrace 2>&1 | tee build.log
 
       - name: Upload jar
         if: success()
@@ -29,3 +36,25 @@ jobs:
         with:
           name: ferronexus-jar
           path: build/libs/*.jar
+
+      # Лог сборки, список ошибок и готовый jar публикуются в ветку build-log,
+      # чтобы их можно было прочитать без доступа к интерфейсу Actions.
+      - name: Publish build log
+        if: always() && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p /tmp/out
+          [ -f build.log ] && cp build.log /tmp/out/build.log || echo "no log" > /tmp/out/build.log
+          grep -nE "error:|FAILED|What went wrong|Could not|Exception" /tmp/out/build.log | head -300 > /tmp/out/errors.txt || true
+          echo "status=${{ job.status }}" > /tmp/out/status.txt
+          echo "commit=${{ github.sha }}" >> /tmp/out/status.txt
+          echo "run=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> /tmp/out/status.txt
+          cp build/libs/*.jar /tmp/out/ 2>/dev/null || true
+          cd /tmp/out
+          git init -q
+          git checkout -q -b build-log
+          git config user.name "ferronexus-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A
+          git commit -qm "Build ${{ job.status }} for ${{ github.sha }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" build-log
