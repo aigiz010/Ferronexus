@@ -1,0 +1,17 @@
+{
+  "multipart": [
+    {"apply": {"model": "ferronexus:block/nexus_bus_core"}},
+    {"when": {"north": "cable|plug"}, "apply": {"model": "ferronexus:block/nexus_bus_side"}},
+    {"when": {"north": "plug"}, "apply": {"model": "ferronexus:block/nexus_bus_plug"}},
+    {"when": {"east": "cable|plug"}, "apply": {"model": "ferronexus:block/nexus_bus_side", "y": 90}},
+    {"when": {"east": "plug"}, "apply": {"model": "ferronexus:block/nexus_bus_plug", "y": 90}},
+    {"when": {"south": "cable|plug"}, "apply": {"model": "ferronexus:block/nexus_bus_side", "y": 180}},
+    {"when": {"south": "plug"}, "apply": {"model": "ferronexus:block/nexus_bus_plug", "y": 180}},
+    {"when": {"west": "cable|plug"}, "apply": {"model": "ferronexus:block/nexus_bus_side", "y": 270}},
+    {"when": {"west": "plug"}, "apply": {"model": "ferronexus:block/nexus_bus_plug", "y": 270}},
+    {"when": {"up": "cable|plug"}, "apply": {"model": "ferronexus:block/nexus_bus_side", "x": 270}},
+    {"when": {"up": "plug"}, "apply": {"model": "ferronexus:block/nexus_bus_plug", "x": 270}},
+    {"when": {"down": "cable|plug"}, "apply": {"model": "ferronexus:block/nexus_bus_side", "x": 90}},
+    {"when": {"down": "plug"}, "apply": {"model": "ferronexus:block/nexus_bus_plug", "x": 90}}
+  ]
+}

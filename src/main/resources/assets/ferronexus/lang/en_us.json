@@ -10,5 +10,17 @@
   "block.ferronexus.coal_generator": "Coal Generator",
   "block.ferronexus.energy_cell": "LV Energy Cell",
   "message.ferronexus.energy": "%s / %s RF (%s)",
-  "message.ferronexus.generator": "%s / %s RF | burning %s%% | fuel: %s"
+  "message.ferronexus.generator": "%s / %s RF | burning %s%% | fuel: %s",
+  "block.ferronexus.nexus_bus": "Nexus Bus",
+  "message.ferronexus.face": "Side %s: %s",
+  "facemode.ferronexus.output": "output",
+  "facemode.ferronexus.input": "input",
+  "facemode.ferronexus.both": "input + output",
+  "facemode.ferronexus.disabled": "disabled",
+  "direction.ferronexus.north": "north",
+  "direction.ferronexus.south": "south",
+  "direction.ferronexus.east": "east",
+  "direction.ferronexus.west": "west",
+  "direction.ferronexus.up": "up",
+  "direction.ferronexus.down": "down"
 }

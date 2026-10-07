@@ -19,6 +19,7 @@ public final class FNItems {
     // Энергия
     public static final DeferredItem<BlockItem> LV_CABLE = ITEMS.registerSimpleBlockItem(FNBlocks.LV_CABLE);
     public static final DeferredItem<BlockItem> MV_CABLE = ITEMS.registerSimpleBlockItem(FNBlocks.MV_CABLE);
+    public static final DeferredItem<BlockItem> NEXUS_BUS = ITEMS.registerSimpleBlockItem(FNBlocks.NEXUS_BUS);
     public static final DeferredItem<BlockItem> COAL_GENERATOR = ITEMS.registerSimpleBlockItem(FNBlocks.COAL_GENERATOR);
     public static final DeferredItem<BlockItem> ENERGY_CELL = ITEMS.registerSimpleBlockItem(FNBlocks.ENERGY_CELL);
 

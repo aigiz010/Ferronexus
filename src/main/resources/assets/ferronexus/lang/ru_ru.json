@@ -10,5 +10,17 @@
   "block.ferronexus.coal_generator": "Угольный генератор",
   "block.ferronexus.energy_cell": "Энергоячейка LV",
   "message.ferronexus.energy": "%s / %s RF (%s)",
-  "message.ferronexus.generator": "%s / %s RF | горение %s%% | топливо: %s"
+  "message.ferronexus.generator": "%s / %s RF | горение %s%% | топливо: %s",
+  "block.ferronexus.nexus_bus": "Шина Nexus",
+  "message.ferronexus.face": "Сторона %s: %s",
+  "facemode.ferronexus.output": "выход",
+  "facemode.ferronexus.input": "вход",
+  "facemode.ferronexus.both": "вход + выход",
+  "facemode.ferronexus.disabled": "отключена",
+  "direction.ferronexus.north": "север",
+  "direction.ferronexus.south": "юг",
+  "direction.ferronexus.east": "восток",
+  "direction.ferronexus.west": "запад",
+  "direction.ferronexus.up": "верх",
+  "direction.ferronexus.down": "низ"
 }
