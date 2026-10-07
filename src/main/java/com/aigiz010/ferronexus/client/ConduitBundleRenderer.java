@@ -6,6 +6,9 @@ import com.aigiz010.ferronexus.conduit.ConduitShapes;
 import com.aigiz010.ferronexus.conduit.ConduitType;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -18,13 +21,14 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Рисует тонкие провода и трубы внутри блока. Общего корпуса нет:
- * у каждого провода свой тонкий узел, отводы к соседям и разъёмы к машинам.
+ * Рисует тонкие провода и трубы. У каждого провода своя точка узла, поэтому они обходят друг друга.
+ * Если два провода всё же пересекаются, общий кубик делится по диагонали: каждый виден прямоугольным треугольником.
  */
 public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleBlockEntity, ConduitBundleRenderer.State> {
     private static final int NO_OVERLAY = 10 << 16;
     private static final Identifier PLUG = tex("plug");
     private static final Identifier[] TEX = new Identifier[ConduitType.values().length];
+    private static final float[][] NORMALS = {{0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {-1, 0, 0}, {1, 0, 0}};
 
     static {
         for (ConduitType t : ConduitType.values()) TEX[t.ordinal()] = tex(t.id());
@@ -38,6 +42,15 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
         int mask;
         final int[] conn = new int[ConduitType.values().length];
         final int[] ends = new int[ConduitType.values().length];
+    }
+
+    private record Piece(ConduitType t, double[] b, Direction.Axis ax) {}
+
+    private static final class Cube {
+        final double[] c;
+        final List<Piece> parts = new ArrayList<>();
+
+        Cube(double[] c) { this.c = c; }
     }
 
     public ConduitBundleRenderer(BlockEntityRendererProvider.Context ctx) {}
@@ -66,21 +79,49 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
     public void submit(State s, PoseStack pose, SubmitNodeCollector out, CameraRenderState camera) {
         if (s.mask == 0) return;
         final int light = s.lightCoords;
+
+        // 1. Части всех проводов.
+        final List<Piece> ps = new ArrayList<>();
         for (ConduitType t : ConduitType.values()) {
             if ((s.mask & t.bit()) == 0) continue;
-            final int e = s.ends[t.ordinal()];
-            final int bits = s.conn[t.ordinal()] | e;
-            final Direction.Axis ax = ConduitShapes.axisOf(bits);
+            int bits = s.conn[t.ordinal()] | s.ends[t.ordinal()];
+            Direction.Axis ax = ConduitShapes.axisOf(bits);
+            if (ax != null) {
+                ps.add(new Piece(t, ConduitShapes.through(t, ax), ax));
+                continue;
+            }
+            ps.add(new Piece(t, ConduitShapes.joint(t), null));
+            for (Direction d : Direction.values())
+                if ((bits & (1 << d.ordinal())) != 0) ps.add(new Piece(t, ConduitShapes.armTo(t, d), d.getAxis()));
+        }
+
+        // 2. Неизбежные пересечения (только поперечные отрезки разных проводов).
+        final List<Cube> cubes = new ArrayList<>();
+        for (int i = 0; i < ps.size(); i++) {
+            Piece a = ps.get(i);
+            if (a.ax() == null) continue;
+            for (int j = i + 1; j < ps.size(); j++) {
+                Piece b = ps.get(j);
+                if (b.ax() == null || b.t() == a.t() || b.ax() == a.ax()) continue;
+                double[] c = ConduitShapes.intersect(a.b(), b.b());
+                if (c == null) continue;
+                Cube k = find(cubes, c);
+                if (!k.parts.contains(a)) k.parts.add(a);
+                if (!k.parts.contains(b)) k.parts.add(b);
+            }
+        }
+
+        // 3. Отрисовка.
+        for (ConduitType t : ConduitType.values()) {
+            if ((s.mask & t.bit()) == 0) continue;
             out.submitCustomGeometry(pose, RenderTypes.entityCutout(TEX[t.ordinal()]), (p, vc) -> {
-                if (ax != null) {
-                    box(p, vc, ConduitShapes.through(t, ax), light, true, ax);
-                    return;
+                for (Piece pc : ps) {
+                    if (pc.t() != t) continue;
+                    if (pc.ax() == null) box(p, vc, pc.b(), light, false, null);
+                    else drawSplit(p, vc, pc, cubes, light);
                 }
-                double[] jy = ConduitShapes.jointY(t, bits);
-                box(p, vc, ConduitShapes.joint(t, jy), light, false, null);
-                for (Direction d : Direction.values())
-                    if ((bits & (1 << d.ordinal())) != 0) box(p, vc, ConduitShapes.armTo(t, d, jy), light, true, d.getAxis());
             });
+            final int e = s.ends[t.ordinal()];
             if (e != 0) {
                 out.submitCustomGeometry(pose, RenderTypes.entityCutout(PLUG), (p, vc) -> {
                     for (Direction d : Direction.values())
@@ -90,16 +131,83 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
         }
     }
 
-    /** Коробка в пикселях 0..16. stretch: u идёт вдоль оси провода, v — поперёк. */
-    private static void box(PoseStack.Pose p, VertexConsumer vc, double[] b, int light, boolean stretch, Direction.Axis axis) {
+    private static Cube find(List<Cube> cubes, double[] c) {
+        for (Cube k : cubes) {
+            if (Math.abs(k.c[0] - c[0]) < 0.01 && Math.abs(k.c[1] - c[1]) < 0.01 && Math.abs(k.c[2] - c[2]) < 0.01) return k;
+        }
+        Cube k = new Cube(c);
+        cubes.add(k);
+        return k;
+    }
+
+    /** Отрезок провода, разрезанный в местах пересечений. */
+    private static void drawSplit(PoseStack.Pose p, VertexConsumer vc, Piece pc, List<Cube> cubes, int light) {
+        final int a = pc.ax().ordinal();
+        List<Cube> on = new ArrayList<>();
+        for (Cube k : cubes) if (k.parts.contains(pc)) on.add(k);
+        if (on.isEmpty()) {
+            box(p, vc, pc.b(), light, true, pc.ax());
+            return;
+        }
+        on.sort(Comparator.comparingDouble(k -> k.c[a]));
+        double pos = pc.b()[a];
+        for (Cube k : on) {
+            if (k.c[a] > pos + 0.001) box(p, vc, seg(pc.b(), a, pos, k.c[a]), light, true, pc.ax());
+            int idx = k.parts.indexOf(pc);
+            if (idx == 0 || idx == 1) {
+                Piece other = k.parts.get(idx == 0 ? 1 : 0);
+                triangle(p, vc, k.c, light, pc.ax(), other.ax());
+            }
+            pos = Math.max(pos, k.c[a + 3]);
+        }
+        if (pos < pc.b()[a + 3] - 0.001) box(p, vc, seg(pc.b(), a, pos, pc.b()[a + 3]), light, true, pc.ax());
+    }
+
+    private static double[] seg(double[] b, int a, double from, double to) {
+        double[] r = b.clone();
+        r[a] = from;
+        r[a + 3] = to;
+        return r;
+    }
+
+    /**
+     * Половина общего кубика: прямоугольный треугольник (призма). Убирается угол «своя ось — начало,
+     * чужая ось — конец», поэтому половины двух проводов дополняют друг друга.
+     */
+    private static void triangle(PoseStack.Pose p, VertexConsumer vc, double[] c, int light,
+                                 Direction.Axis mine, Direction.Axis other) {
+        int al = mine.ordinal(), be = other.ordinal(), ga = 3 - al - be;
+        float aLo = (float) c[al] / 16f, bHi = (float) c[be + 3] / 16f;
+        int[] faces = ga == 0 ? new int[] {4, 5} : ga == 1 ? new int[] {0, 1} : new int[] {2, 3};
+        for (int f : faces) {
+            float[][] v = verts(c, f);
+            for (int i = 0; i < 4; i++) {
+                if (Math.abs(v[i][al] - aLo) < 1e-4 && Math.abs(v[i][be] - bHi) < 1e-4) v[i] = v[(i + 3) % 4].clone();
+            }
+            float[] n = NORMALS[f];
+            face(p, vc, light, true, mine, n[0], n[1], n[2], v, c);
+        }
+    }
+
+    private static float[][] verts(double[] b, int f) {
         float x0 = (float) b[0] / 16f, y0 = (float) b[1] / 16f, z0 = (float) b[2] / 16f;
         float x1 = (float) b[3] / 16f, y1 = (float) b[4] / 16f, z1 = (float) b[5] / 16f;
-        face(p, vc, light, stretch, axis, 0, -1, 0, new float[][] {{x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}, {x0, y0, z1}}, b);
-        face(p, vc, light, stretch, axis, 0, 1, 0, new float[][] {{x0, y1, z1}, {x1, y1, z1}, {x1, y1, z0}, {x0, y1, z0}}, b);
-        face(p, vc, light, stretch, axis, 0, 0, -1, new float[][] {{x1, y0, z0}, {x0, y0, z0}, {x0, y1, z0}, {x1, y1, z0}}, b);
-        face(p, vc, light, stretch, axis, 0, 0, 1, new float[][] {{x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1}}, b);
-        face(p, vc, light, stretch, axis, -1, 0, 0, new float[][] {{x0, y0, z0}, {x0, y0, z1}, {x0, y1, z1}, {x0, y1, z0}}, b);
-        face(p, vc, light, stretch, axis, 1, 0, 0, new float[][] {{x1, y0, z1}, {x1, y0, z0}, {x1, y1, z0}, {x1, y1, z1}}, b);
+        return switch (f) {
+            case 0 -> new float[][] {{x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}, {x0, y0, z1}};
+            case 1 -> new float[][] {{x0, y1, z1}, {x1, y1, z1}, {x1, y1, z0}, {x0, y1, z0}};
+            case 2 -> new float[][] {{x1, y0, z0}, {x0, y0, z0}, {x0, y1, z0}, {x1, y1, z0}};
+            case 3 -> new float[][] {{x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1}};
+            case 4 -> new float[][] {{x0, y0, z0}, {x0, y0, z1}, {x0, y1, z1}, {x0, y1, z0}};
+            default -> new float[][] {{x1, y0, z1}, {x1, y0, z0}, {x1, y1, z0}, {x1, y1, z1}};
+        };
+    }
+
+    /** Коробка в пикселях 0..16. stretch: u идёт вдоль оси провода, v — поперёк. */
+    private static void box(PoseStack.Pose p, VertexConsumer vc, double[] b, int light, boolean stretch, Direction.Axis axis) {
+        for (int f = 0; f < 6; f++) {
+            float[] n = NORMALS[f];
+            face(p, vc, light, stretch, axis, n[0], n[1], n[2], verts(b, f), b);
+        }
     }
 
     private static void face(PoseStack.Pose p, VertexConsumer vc, int light, boolean stretch, Direction.Axis axis,
@@ -119,7 +227,7 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
         for (float[] q : v) {
             float u, w;
             if (stretch && !endCap) {
-                u = q[ua] - uMin;                       // по длине: 1 блок = вся текстура
+                u = q[ua];                                 // по длине, от края блока: текстура не рвётся
                 w = vLen <= 0 ? 0 : (q[va] - vMin) / vLen; // поперёк: вся высота текстуры
             } else {
                 // Узел и торцы: узкая полоса текстуры провода, чтобы цвет совпадал с трубкой.

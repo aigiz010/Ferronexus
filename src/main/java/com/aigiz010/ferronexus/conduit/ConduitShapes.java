@@ -9,8 +9,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Геометрия блока с проводами (в пикселях 0..16).
- * У каждого провода свой тонкий узел. Сечение: сетка 4x4 в 3..13, провод 2x2 px.
- * Ось Z: (x=u, y=v); ось X: (y=u, z=v); ось Y: (x=u, z=v).
+ * У каждого провода своя точка узла P = (px, py, pz) в сетке 4x4x4. Сетка подобрана как латинский квадрат:
+ * pz = (cx + cy) % 4. Поэтому по каждой оси у всех проводов разные места, и провод идёт из узла к
+ * любой стороне прямо — без вертикальных перемычек, а узлы разных проводов никогда не пересекаются.
+ * Ось Z: (x=px, y=py); ось X: (y=py, z=pz); ось Y: (x=px, z=pz).
  */
 public final class ConduitShapes {
     public static final double ORIGIN = 3, CELL = 2.5, SIZE = 2, PLUG = 1.5;
@@ -19,21 +21,22 @@ public final class ConduitShapes {
 
     private static double lo(int cell) { return ORIGIN + cell * CELL + (CELL - SIZE) / 2; }
 
-    public static double u(ConduitType t) { return lo(t.slot() % 4); }
+    private static int cx(ConduitType t) { return t.slot() % 4; }
 
-    public static double v(ConduitType t) { return lo(t.slot() / 4); }
+    private static int cy(ConduitType t) { return t.slot() / 4; }
+
+    public static double px(ConduitType t) { return lo(cx(t)); }
+
+    public static double py(ConduitType t) { return lo(cy(t)); }
+
+    public static double pz(ConduitType t) { return lo((cx(t) + cy(t)) % 4); }
+
+    public static double u(ConduitType t) { return px(t); }
+
+    public static double v(ConduitType t) { return py(t); }
 
     /** Только для совместимости (раньше был общий корпус). */
-    public static double[] housing(int mask) {
-        double min = 16, max = 0;
-        for (ConduitType t : ConduitType.values()) {
-            if ((mask & t.bit()) == 0) continue;
-            min = Math.min(min, Math.min(u(t), v(t)));
-            max = Math.max(max, Math.max(u(t), v(t)) + SIZE);
-        }
-        if (min > max) return new double[] {6, 10};
-        return new double[] {min - 0.5, max + 0.5};
-    }
+    public static double[] housing(int mask) { return new double[] {ORIGIN, 16 - ORIGIN}; }
 
     private static int bit(Direction d) { return 1 << d.ordinal(); }
 
@@ -45,50 +48,39 @@ public final class ConduitShapes {
         return null;
     }
 
-    /** Высота узла провода: охватывает сечения использованных горизонтальных отводов. */
-    public static double[] jointY(ConduitType t, int bits) {
-        double a = u(t), b = v(t), lo = 16, hi = 0;
-        if ((bits & (bit(Direction.NORTH) | bit(Direction.SOUTH))) != 0) { lo = Math.min(lo, b); hi = Math.max(hi, b + SIZE); }
-        if ((bits & (bit(Direction.WEST) | bit(Direction.EAST))) != 0) { lo = Math.min(lo, a); hi = Math.max(hi, a + SIZE); }
-        if (lo > hi) { lo = b; hi = b + SIZE; }
-        return new double[] {lo, hi};
-    }
-
-    /** То же, что jointY (имя для отрисовки). */
-    public static double[] jointZ(ConduitType t, int bits) { return jointY(t, bits); }
-
-    /** Узел провода (толщиной с сам провод). */
-    public static double[] joint(ConduitType t, double[] jy) {
-        double a = u(t), b = v(t);
-        return new double[] {a, jy[0], b, a + SIZE, jy[1], b + SIZE};
+    /** Узел провода — кубик 2x2x2 в точке P. */
+    public static double[] joint(ConduitType t) {
+        double x = px(t), y = py(t), z = pz(t);
+        return new double[] {x, y, z, x + SIZE, y + SIZE, z + SIZE};
     }
 
     /** Отвод от узла до края блока: {x1,y1,z1,x2,y2,z2}. */
-    public static double[] armTo(ConduitType t, Direction d, double[] jy) {
-        double a = u(t), b = v(t), s = SIZE;
+    public static double[] armTo(ConduitType t, Direction d) {
+        double x = px(t), y = py(t), z = pz(t), s = SIZE;
         return switch (d) {
-            case NORTH -> new double[] {a, b, 0, a + s, b + s, b};
-            case SOUTH -> new double[] {a, b, b + s, a + s, b + s, 16};
-            case WEST -> new double[] {0, a, b, a, a + s, b + s};
-            case EAST -> new double[] {a + s, a, b, 16, a + s, b + s};
-            case DOWN -> new double[] {a, 0, b, a + s, jy[0], b + s};
-            case UP -> new double[] {a, jy[1], b, a + s, 16, b + s};
+            case NORTH -> new double[] {x, y, 0, x + s, y + s, z};
+            case SOUTH -> new double[] {x, y, z + s, x + s, y + s, 16};
+            case WEST -> new double[] {0, y, z, x, y + s, z + s};
+            case EAST -> new double[] {x + s, y, z, 16, y + s, z + s};
+            case DOWN -> new double[] {x, 0, z, x + s, y, z + s};
+            case UP -> new double[] {x, y + s, z, x + s, 16, z + s};
         };
     }
 
-    /** Совместимость: отвод с полным узлом (h больше не используется). */
+    /** Отвод вместе с узлом (для выбора провода прицелом). h не используется. */
     public static double[] arm(ConduitType t, Direction d, double[] h) {
-        double a = u(t), b = v(t);
-        return armTo(t, d, new double[] {Math.min(a, b), Math.max(a, b) + SIZE});
+        double[] a = armTo(t, d), j = joint(t);
+        return new double[] {Math.min(a[0], j[0]), Math.min(a[1], j[1]), Math.min(a[2], j[2]),
+                Math.max(a[3], j[3]), Math.max(a[4], j[4]), Math.max(a[5], j[5])};
     }
 
     /** Сплошной провод сквозь блок по оси. */
     public static double[] through(ConduitType t, Direction.Axis axis) {
-        double a = u(t), b = v(t), s = SIZE;
+        double x = px(t), y = py(t), z = pz(t), s = SIZE;
         return switch (axis) {
-            case X -> new double[] {0, a, b, 16, a + s, b + s};
-            case Y -> new double[] {a, 0, b, a + s, 16, b + s};
-            case Z -> new double[] {a, b, 0, a + s, b + s, 16};
+            case X -> new double[] {0, y, z, 16, y + s, z + s};
+            case Y -> new double[] {x, 0, z, x + s, 16, z + s};
+            case Z -> new double[] {x, y, 0, x + s, y + s, 16};
         };
     }
 
@@ -100,26 +92,25 @@ public final class ConduitShapes {
             r.add(through(t, ax));
             return r;
         }
-        double[] jy = jointY(t, bits);
-        r.add(joint(t, jy));
-        for (Direction d : Direction.values()) if ((bits & bit(d)) != 0) r.add(armTo(t, d, jy));
+        r.add(joint(t));
+        for (Direction d : Direction.values()) if ((bits & bit(d)) != 0) r.add(armTo(t, d));
         return r;
     }
 
-    /** Разъём у края блока (чуть шире провода). */
+    /** Разъём у края блока (вокруг сечения провода). */
     public static double[] plug(ConduitType t, Direction d) {
-        double a = u(t) - 0.5, b = v(t) - 0.5, s = SIZE + 1, p = PLUG;
+        double x = px(t) - 0.25, y = py(t) - 0.25, z = pz(t) - 0.25, s = SIZE + 0.5, p = PLUG;
         return switch (d) {
-            case NORTH -> new double[] {a, b, 0, a + s, b + s, p};
-            case SOUTH -> new double[] {a, b, 16 - p, a + s, b + s, 16};
-            case WEST -> new double[] {0, a, b, p, a + s, b + s};
-            case EAST -> new double[] {16 - p, a, b, 16, a + s, b + s};
-            case DOWN -> new double[] {a, 0, b, a + s, p, b + s};
-            case UP -> new double[] {a, 16 - p, b, a + s, 16, b + s};
+            case NORTH -> new double[] {x, y, 0, x + s, y + s, p};
+            case SOUTH -> new double[] {x, y, 16 - p, x + s, y + s, 16};
+            case WEST -> new double[] {0, y, z, p, y + s, z + s};
+            case EAST -> new double[] {16 - p, y, z, 16, y + s, z + s};
+            case DOWN -> new double[] {x, 0, z, x + s, p, z + s};
+            case UP -> new double[] {x, 16 - p, z, x + s, 16, z + s};
         };
     }
 
-    /** Стороны, куда идёт провод (соединения + разъёмы). */
+    /** Стороны, куда идёт провод (соединения + разъёмы + заглушки). */
     public static int bits(ConduitBundleBlockEntity be, ConduitType t) {
         int r = 0;
         for (Direction d : Direction.values())
@@ -127,21 +118,12 @@ public final class ConduitShapes {
         return r;
     }
 
-    /** Какой провод под точкой (локальные координаты 0..16), включая узлы. */
-    public static ConduitType pickType(ConduitBundleBlockEntity be, double x, double y, double z) {
-        int mask = be.typesMask();
-        for (ConduitType t : ConduitType.values()) {
-            if ((mask & t.bit()) == 0) continue;
-            int b = bits(be, t);
-            for (double[] p : pieces(t, b)) if (contains(p, x, y, z)) return t;
-            for (Direction d : Direction.values())
-                if ((be.isPlug(t, d) || be.isStub(t, d)) && contains(plug(t, d), x, y, z)) return t;
-        }
-        return null;
-    }
-
-    public static boolean overlaps(double[] a, double[] b) {
-        return a[0] < b[3] && b[0] < a[3] && a[1] < b[4] && b[1] < a[4] && a[2] < b[5] && b[2] < a[5];
+    /** Пересечение двух коробок или null. */
+    public static double[] intersect(double[] a, double[] b) {
+        double[] r = {Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[2], b[2]),
+                Math.min(a[3], b[3]), Math.min(a[4], b[4]), Math.min(a[5], b[5])};
+        for (int i = 0; i < 3; i++) if (r[i + 3] - r[i] < 0.01) return null;
+        return r;
     }
 
     public static VoxelShape box(double[] b) {
@@ -158,8 +140,7 @@ public final class ConduitShapes {
         VoxelShape shape = Shapes.empty();
         for (ConduitType t : ConduitType.values()) {
             if ((mask & t.bit()) == 0) continue;
-            int b = bits(be, t);
-            for (double[] p : pieces(t, b)) shape = Shapes.or(shape, box(p));
+            for (double[] p : pieces(t, bits(be, t))) shape = Shapes.or(shape, box(p));
             for (Direction d : Direction.values())
                 if (be.isPlug(t, d) || be.isStub(t, d)) shape = Shapes.or(shape, box(plug(t, d)));
         }
