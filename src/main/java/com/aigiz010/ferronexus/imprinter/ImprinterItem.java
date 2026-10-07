@@ -1,6 +1,8 @@
 package com.aigiz010.ferronexus.imprinter;
 
+import com.aigiz010.ferronexus.conduit.ConduitBundleBlock;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -79,6 +81,39 @@ public class ImprinterItem extends Item {
             case 3 -> new int[] {z, sx - 1 - x};
             default -> new int[] {x, z};
         };
+    }
+
+    // ---------- Поворот настроек сторон блока проводов ----------
+    private static int rotateMask(int mask, Rotation rot) {
+        int out = 0;
+        for (Direction d : Direction.values()) {
+            if ((mask & (1 << d.ordinal())) != 0) out |= 1 << rot.rotate(d).ordinal();
+        }
+        return out;
+    }
+
+    private static int rotateModes(int m, Rotation rot) {
+        int out = 0;
+        for (Direction d : Direction.values()) {
+            int v = (m >> (d.ordinal() * 2)) & 3;
+            out |= v << (rot.rotate(d).ordinal() * 2);
+        }
+        return out;
+    }
+
+    /** Режимы сторон (M), соединения (C), разъёмы (P), заглушки (S) поворачиваются вместе с блоком. */
+    public static void rotateConduitTag(CompoundTag t, Rotation rot) {
+        if (rot == Rotation.NONE) return;
+        for (int i = 0; i < 32; i++) {
+            if (t.contains("M" + i)) t.putInt("M" + i, rotateModes(t.getIntOr("M" + i, 0), rot));
+            if (t.contains("C" + i)) t.putInt("C" + i, rotateMask(t.getIntOr("C" + i, 0), rot));
+            if (t.contains("P" + i)) t.putInt("P" + i, rotateMask(t.getIntOr("P" + i, 0), rot));
+            if (t.contains("S" + i)) t.putInt("S" + i, rotateMask(t.getIntOr("S" + i, 0), rot));
+        }
+    }
+
+    private static void rotateSettings(BlockState st, CompoundTag t, Rotation rot) {
+        if (st.getBlock() instanceof ConduitBundleBlock) rotateConduitTag(t, rot);
     }
 
     /** Вызывается с сервера по нажатию R. */
@@ -230,6 +265,7 @@ public class ImprinterItem extends Item {
         be.setChanged();
         BlockState st = level.getBlockState(p);
         level.sendBlockUpdated(p, st, st, 3);
+        level.updateNeighborsAt(p, st.getBlock());
     }
 
     private static BlockPos target(CompoundTag tag, CompoundTag e, BlockPos origin, int r) {
@@ -262,6 +298,7 @@ public class ImprinterItem extends Item {
             if (e.contains("T")) {
                 CompoundTag t = e.getCompoundOrEmpty("T").copy();
                 if (!creative) stripContents(t);
+                rotateSettings(st, t, rotation);
                 loadInto(level, p, t);
             }
             placed++;
@@ -278,6 +315,7 @@ public class ImprinterItem extends Item {
             return;
         }
         int r = Math.floorMod(tag.getIntOr("Rot", 0), 4);
+        Rotation rotation = rotation(r);
         var blocks = level.holderLookup(Registries.BLOCK);
         int applied = 0;
         for (int i = 0; i < list.size(); i++) {
@@ -285,12 +323,14 @@ public class ImprinterItem extends Item {
             if (!e.contains("T")) continue;
             BlockPos p = target(tag, e, origin, r);
             BlockState want = NbtUtils.readBlockState(blocks, e.getCompoundOrEmpty("S"));
-            if (level.getBlockState(p).getBlock() != want.getBlock()) continue;
+            BlockState here = level.getBlockState(p);
+            if (here.getBlock() != want.getBlock()) continue;
             BlockEntity be = level.getBlockEntity(p);
             if (be == null) continue;
             CompoundTag cur = be.saveCustomOnly(level.registryAccess());
             CompoundTag set = e.getCompoundOrEmpty("T").copy();
             stripContents(set);
+            rotateSettings(here, set, rotation);
             for (String k : CONTENT_KEYS) if (cur.contains(k)) set.put(k, cur.get(k).copy());
             for (int n = 0; n < 32; n++) if (cur.contains("E" + n)) set.put("E" + n, cur.get("E" + n).copy());
             loadInto(level, p, set);
