@@ -24,7 +24,6 @@ jobs:
         with:
           gradle-version: current
 
-      # Текстуры приходят как tools/textures.b64 (строка: путь base64). Превращаем в PNG и коммитим в main.
       - name: Decode textures
         if: github.event_name != 'pull_request'
         shell: bash
@@ -69,19 +68,16 @@ jobs:
           name: ferronexus-jar
           path: build/libs/*.jar
 
-      # Сигнатуры ключевых классов игры/NeoForge — чтобы чинить код под точный API.
       - name: Dump API
         if: always()
         shell: bash
         run: |
           CP=$(find build ~/.gradle/caches -name '*.jar' 2>/dev/null | grep -iE 'neoforge|minecraft' | grep -viE 'sources|javadoc' | tr '\n' ':')
-          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -vE '^patches/' | grep -E 'client/renderer/(SubmitNodeCollector|OrderedSubmitNodeCollector|SubmitNodeStorage|ItemBlockRenderTypes)|client/renderer/block/|client/renderer/rendertype/RenderTypes|client/renderer/state/|client/renderer/block/model/BlockStateModel|client/renderer/block/model/BlockModelPart|client/renderer/texture/OverlayTexture|client/renderer/LightCoordsUtil|client/renderer/LevelRenderer\.class|client/Minecraft\.class' | sort -u > classes.txt || true
-          LIST=$(grep -E 'client/renderer/(SubmitNodeCollector|OrderedSubmitNodeCollector)[^/]*\.class|client/renderer/block/[^/]*\.class|client/renderer/block/model/(BlockStateModel|BlockModelPart)\.class|client/renderer/state/[^/]*(Moving|Block)[^/]*\.class|client/renderer/rendertype/RenderTypes\.class|client/renderer/texture/OverlayTexture\.class|client/renderer/ItemBlockRenderTypes\.class' classes.txt | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
+          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -vE '^patches/' | grep -E 'client/renderer/block/dispatch/|client/resources/model/geometry/BakedQuad|blaze3d/vertex/(QuadInstance|VertexConsumer)|client/resources/model/ModelManager|client/renderer/block/model/BlockDisplayContext|client/renderer/block/model/BlockModel\.class|neoforge/client/extensions/IBlockStateModelExtension|neoforge/client/extensions/IVertexConsumerExtension|client/renderer/texture/TextureAtlas\.class|client/renderer/LightCoordsUtil|client/renderer/LightTexture|client/renderer/rendertype/RenderType\.class|client/renderer/item/ItemModelResolver' | sort -u > classes.txt || true
+          LIST=$(grep -E '\.class$' classes.txt | grep -vE '\$[0-9]+\.class$' | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
           for c in $LIST; do
-            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | grep -vE '^\s*(private|static \{\})' | head -120 || true
+            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | grep -vE '^\s*(private|static \{\})' | head -80 || true
           done > api.txt
-          echo "=== Minecraft (block/render getters)" >> api.txt
-          javap -cp "$CP" net.minecraft.client.Minecraft 2>&1 | grep -iE 'block|render|model' | head -60 >> api.txt || true
 
       - name: Publish build log
         if: always() && github.event_name != 'pull_request'
