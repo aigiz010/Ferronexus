@@ -10,6 +10,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 
 /**
  * Предмет провода/трубы.
@@ -46,7 +47,7 @@ public class ConduitItem extends Item {
                 be.remove(type);
                 if (!creative) {
                     ItemStack back = new ItemStack(this);
-                    if (!player.getInventory().add(back)) player.drop(back, false);
+                    if (!player.getInventory().add(back)) Block.popResource(level, pos, back);
                 }
                 if (be.count() == 0) level.removeBlock(pos, false);
             }
