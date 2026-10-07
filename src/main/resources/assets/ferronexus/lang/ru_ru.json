@@ -32,5 +32,15 @@
   "block.ferronexus.conduit_bundle": "Блок проводов",
   "message.ferronexus.conduit_face": "%s, сторона %s: %s",
   "message.ferronexus.conduit_present": "%s уже есть в этом блоке",
-  "message.ferronexus.conduit_full": "В блоке уже %s проводов — больше нельзя"
+  "message.ferronexus.conduit_full": "В блоке уже %s проводов — больше нельзя",
+  "jade.ferronexus.conduits": "Проводов: %s / %s",
+  "jade.ferronexus.links": "  (связей: %s, разъёмов: %s)",
+  "jade.ferronexus.side": "Сторона: %s, режим: %s",
+  "jade.ferronexus.dir.down": "низ",
+  "jade.ferronexus.dir.up": "верх",
+  "jade.ferronexus.dir.north": "север",
+  "jade.ferronexus.dir.south": "юг",
+  "jade.ferronexus.dir.west": "запад",
+  "jade.ferronexus.dir.east": "восток",
+  "config.jade.plugin_ferronexus.conduits": "Провода в блоке"
 }

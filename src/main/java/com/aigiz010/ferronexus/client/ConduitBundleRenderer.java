@@ -18,7 +18,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Рисует тонкие провода и трубы внутри блока: корпус в центре,
+ * Рисует тонкие провода и трубы внутри блока: корпус в центре (только на развилках),
  * отрезки к соседям и разъёмы к машинам.
  */
 public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleBlockEntity, ConduitBundleRenderer.State> {
@@ -39,6 +39,7 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
         int mask;
         final int[] conn = new int[ConduitType.values().length];
         final int[] ends = new int[ConduitType.values().length];
+        Direction.Axis axis;
     }
 
     public ConduitBundleRenderer(BlockEntityRendererProvider.Context ctx) {}
@@ -61,6 +62,9 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
             s.conn[t.ordinal()] = c;
             s.ends[t.ordinal()] = e;
         }
+        int[] dirs = new int[s.conn.length];
+        for (int i = 0; i < dirs.length; i++) dirs[i] = s.conn[i] | s.ends[i];
+        s.axis = ConduitShapes.straightAxis(s.mask, dirs);
     }
 
     @Override
@@ -68,12 +72,19 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
         if (s.mask == 0) return;
         final int light = s.lightCoords;
         final double[] h = ConduitShapes.housing(s.mask);
-        out.submitCustomGeometry(pose, RenderTypes.entityCutout(HOUSING), (p, vc) ->
-                box(p, vc, new double[] {h[0], h[0], h[0], h[1], h[1], h[1]}, light, false, null));
+        final Direction.Axis axis = s.axis;
+        // Корпус нужен только на развилках, поворотах и концах линии.
+        if (axis == null) {
+            out.submitCustomGeometry(pose, RenderTypes.entityCutout(HOUSING), (p, vc) ->
+                    box(p, vc, new double[] {h[0], h[0], h[0], h[1], h[1], h[1]}, light, false, null));
+        }
         for (ConduitType t : ConduitType.values()) {
             if ((s.mask & t.bit()) == 0) continue;
             final int c = s.conn[t.ordinal()], e = s.ends[t.ordinal()];
-            if (c != 0) {
+            if (axis != null) {
+                out.submitCustomGeometry(pose, RenderTypes.entityCutout(TEX[t.ordinal()]), (p, vc) ->
+                        box(p, vc, ConduitShapes.through(t, axis, h), light, true, axis));
+            } else if (c != 0) {
                 out.submitCustomGeometry(pose, RenderTypes.entityCutout(TEX[t.ordinal()]), (p, vc) -> {
                     for (Direction d : Direction.values())
                         if ((c & (1 << d.ordinal())) != 0) box(p, vc, ConduitShapes.arm(t, d, h), light, true, d.getAxis());
@@ -92,6 +103,7 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
     private static void box(PoseStack.Pose p, VertexConsumer vc, double[] b, int light, boolean stretch, Direction.Axis axis) {
         float x0 = (float) b[0] / 16f, y0 = (float) b[1] / 16f, z0 = (float) b[2] / 16f;
         float x1 = (float) b[3] / 16f, y1 = (float) b[4] / 16f, z1 = (float) b[5] / 16f;
+        // Каждая грань: 4 вершины + оси (ua, va) для текстурных координат.
         face(p, vc, light, stretch, axis, 0, -1, 0, new float[][] {{x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}, {x0, y0, z1}}, b);
         face(p, vc, light, stretch, axis, 0, 1, 0, new float[][] {{x0, y1, z1}, {x1, y1, z1}, {x1, y1, z0}, {x0, y1, z0}}, b);
         face(p, vc, light, stretch, axis, 0, 0, -1, new float[][] {{x1, y0, z0}, {x0, y0, z0}, {x0, y1, z0}, {x1, y1, z0}}, b);
@@ -117,8 +129,8 @@ public class ConduitBundleRenderer implements BlockEntityRenderer<ConduitBundleB
         for (float[] q : v) {
             float u, w;
             if (stretch && !endCap) {
-                u = q[ua] - uMin;
-                w = vLen <= 0 ? 0 : (q[va] - vMin) / vLen;
+                u = q[ua] - uMin;                       // по длине: 1 блок = вся текстура
+                w = vLen <= 0 ? 0 : (q[va] - vMin) / vLen; // поперёк: вся высота текстуры
             } else if (endCap) {
                 u = 0.02f + (uLen <= 0 ? 0 : (q[ua] - uMin) / uLen) * 0.06f;
                 w = vLen <= 0 ? 0 : (q[va] - vMin) / vLen;

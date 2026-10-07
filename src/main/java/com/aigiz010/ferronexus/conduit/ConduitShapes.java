@@ -59,6 +59,43 @@ public final class ConduitShapes {
         };
     }
 
+    /** Направления (соединения + разъёмы) для каждого типа битами Direction.ordinal. */
+    public static int[] dirs(ConduitBundleBlockEntity be) {
+        int[] r = new int[ConduitType.values().length];
+        for (ConduitType t : ConduitType.values())
+            for (Direction d : Direction.values())
+                if (be.isConnected(t, d) || be.isPlug(t, d) || be.isStub(t, d)) r[t.ordinal()] |= 1 << d.ordinal();
+        return r;
+    }
+
+    /** Если все провода идут прямо по одной оси (без развилок и поворотов) — эта ось, иначе null. */
+    public static Direction.Axis straightAxis(int mask, int[] dirs) {
+        Direction.Axis axis = null;
+        for (ConduitType t : ConduitType.values()) {
+            if ((mask & t.bit()) == 0) continue;
+            Direction.Axis found = null;
+            for (Direction.Axis ax : Direction.Axis.values()) {
+                int pair = 0;
+                for (Direction d : Direction.values()) if (d.getAxis() == ax) pair |= 1 << d.ordinal();
+                if (dirs[t.ordinal()] == pair) found = ax;
+            }
+            if (found == null || (axis != null && axis != found)) return null;
+            axis = found;
+        }
+        return axis;
+    }
+
+    /** Сплошной провод сквозь блок по оси. */
+    public static double[] through(ConduitType t, Direction.Axis axis, double[] h) {
+        double[] r = {16, 16, 16, 0, 0, 0};
+        for (Direction d : Direction.values()) {
+            if (d.getAxis() != axis) continue;
+            double[] a = arm(t, d, h);
+            for (int i = 0; i < 3; i++) { r[i] = Math.min(r[i], a[i]); r[i + 3] = Math.max(r[i + 3], a[i + 3]); }
+        }
+        return r;
+    }
+
     public static VoxelShape box(double[] b) {
         return Block.box(b[0], b[1], b[2], b[3], b[4], b[5]);
     }
@@ -71,14 +108,16 @@ public final class ConduitShapes {
     public static VoxelShape build(ConduitBundleBlockEntity be) {
         int mask = be.typesMask();
         double[] h = housing(mask);
-        VoxelShape shape = Block.box(h[0], h[0], h[0], h[1], h[1], h[1]);
+        Direction.Axis axis = straightAxis(mask, dirs(be));
+        VoxelShape shape = axis != null ? Shapes.empty() : Block.box(h[0], h[0], h[0], h[1], h[1], h[1]);
         for (ConduitType t : ConduitType.values()) {
             if ((mask & t.bit()) == 0) continue;
+            if (axis != null) shape = Shapes.or(shape, box(through(t, axis, h)));
             for (Direction d : Direction.values()) {
-                if (be.isConnected(t, d)) shape = Shapes.or(shape, box(arm(t, d, h)));
+                if (axis == null && be.isConnected(t, d)) shape = Shapes.or(shape, box(arm(t, d, h)));
                 if (be.isPlug(t, d) || be.isStub(t, d)) shape = Shapes.or(shape, box(plug(t, d)));
             }
         }
-        return shape;
+        return shape.isEmpty() ? Block.box(h[0], h[0], h[0], h[1], h[1], h[1]) : shape;
     }
 }

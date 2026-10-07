@@ -11,6 +11,7 @@ base { archivesName = mod_id }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
+
 neoForge {
     version = project.neo_version
     runs {
@@ -24,7 +25,16 @@ neoForge {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+repositories {
+    maven {
+        url = 'https://cursemaven.com'
+        content { includeGroup 'curse.maven' }
+    }
+}
+
 dependencies {
+    // Подсказки при наведении — необязательная зависимость, только для компиляции
+    compileOnly 'curse.maven:jade-324717:9042207'
 }
 
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {

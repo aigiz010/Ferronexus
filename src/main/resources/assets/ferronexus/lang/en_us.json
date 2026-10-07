@@ -32,5 +32,15 @@
   "block.ferronexus.conduit_bundle": "Conduit Bundle",
   "message.ferronexus.conduit_face": "%s, side %s: %s",
   "message.ferronexus.conduit_present": "%s is already in this block",
-  "message.ferronexus.conduit_full": "This block already holds %s conduits"
+  "message.ferronexus.conduit_full": "This block already holds %s conduits",
+  "jade.ferronexus.conduits": "Conduits: %s / %s",
+  "jade.ferronexus.links": "  (links: %s, plugs: %s)",
+  "jade.ferronexus.side": "Side: %s, mode: %s",
+  "jade.ferronexus.dir.down": "down",
+  "jade.ferronexus.dir.up": "up",
+  "jade.ferronexus.dir.north": "north",
+  "jade.ferronexus.dir.south": "south",
+  "jade.ferronexus.dir.west": "west",
+  "jade.ferronexus.dir.east": "east",
+  "config.jade.plugin_ferronexus.conduits": "Conduits in block"
 }
