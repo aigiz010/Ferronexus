@@ -1,5 +1,6 @@
 package com.aigiz010.ferronexus.imprinter;
 
+import com.aigiz010.ferronexus.Ferronexus;
 import com.aigiz010.ferronexus.conduit.ConduitBundleBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -9,15 +10,20 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
@@ -27,6 +33,7 @@ import net.minecraft.world.level.storage.TagValueInput;
 
 /**
  * Импринтер: копирует структуры, их содержимое и настройки.
+ *  - В руке достаёт до блоков в 3 раза дальше обычного.
  *  - Shift + ПКМ — сменить режим.
  *  - R — повернуть вставку на 90° по часовой (вокруг вертикали).
  *  - «Выделение»: ПКМ по блоку — первый угол, ещё раз — второй.
@@ -39,10 +46,21 @@ public class ImprinterItem extends Item {
     public static final int MAX_SIDE = 64;
     public static final int MAX_BLOCKS = 8192;
     public static final String ROTATE_KEY = "key.ferronexus.imprinter_rotate";
+    /** +200% к дальности работы с блоками = в 3 раза дальше. */
+    public static final double REACH_BONUS = 2.0;
     private static final String[] CONTENT_KEYS = {"Items", "items", "Inventory", "Fluid", "fluid", "Tank", "Tanks", "Energy", "energy"};
 
     public ImprinterItem(Item.Properties props) {
-        super(props.stacksTo(1));
+        super(props.stacksTo(1).attributes(reach()));
+    }
+
+    private static ItemAttributeModifiers reach() {
+        return ItemAttributeModifiers.builder()
+                .add(Attributes.BLOCK_INTERACTION_RANGE,
+                        new AttributeModifier(Identifier.fromNamespaceAndPath(Ferronexus.MOD_ID, "imprinter_reach"),
+                                REACH_BONUS, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL),
+                        EquipmentSlotGroup.HAND)
+                .build();
     }
 
     // ---------- Данные в предмете ----------
