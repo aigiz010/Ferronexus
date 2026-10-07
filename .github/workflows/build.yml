@@ -75,15 +75,13 @@ jobs:
         shell: bash
         run: |
           CP=$(find build ~/.gradle/caches -name '*.jar' 2>/dev/null | grep -iE 'neoforge|minecraft' | grep -viE 'sources|javadoc' | tr '\n' ':')
-          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -vE '^patches/' | grep -E 'neoforge/network/|neoforge/client/network/|KeyMapping|InputConstants|RegisterKeyMappingsEvent|protocol/common/custom/CustomPacketPayload|network/codec/(StreamCodec|ByteBufCodecs)|level/block/Rotation|neoforge/client/settings/' | sort -u > classes.txt || true
-          NW=$(grep -E 'neoforge/network/(PacketDistributor|event/RegisterPayloadHandlersEvent|registration/PayloadRegistrar|handling/IPayloadContext|handling/IPayloadHandler)\.class|neoforge/client/network/ClientPacketDistributor\.class|neoforge/client/settings/KeyConflictContext\.class' classes.txt | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
-          for c in $NW net.minecraft.client.KeyMapping 'net.minecraft.client.KeyMapping$Category' com.mojang.blaze3d.platform.InputConstants \
-                   net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent \
-                   net.minecraft.network.protocol.common.custom.CustomPacketPayload 'net.minecraft.network.protocol.common.custom.CustomPacketPayload$Type' \
-                   net.minecraft.network.codec.StreamCodec net.minecraft.network.codec.ByteBufCodecs \
-                   net.minecraft.world.level.block.Rotation net.neoforged.neoforge.client.event.ClientTickEvent; do
-            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | grep -vE '^\s*(private|static \{\})' | head -200 || true
+          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -vE '^patches/' | grep -E 'client/renderer/(SubmitNodeCollector|OrderedSubmitNodeCollector|SubmitNodeStorage|ItemBlockRenderTypes)|client/renderer/block/|client/renderer/rendertype/RenderTypes|client/renderer/state/|client/renderer/block/model/BlockStateModel|client/renderer/block/model/BlockModelPart|client/renderer/texture/OverlayTexture|client/renderer/LightCoordsUtil|client/renderer/LevelRenderer\.class|client/Minecraft\.class' | sort -u > classes.txt || true
+          LIST=$(grep -E 'client/renderer/(SubmitNodeCollector|OrderedSubmitNodeCollector)[^/]*\.class|client/renderer/block/[^/]*\.class|client/renderer/block/model/(BlockStateModel|BlockModelPart)\.class|client/renderer/state/[^/]*(Moving|Block)[^/]*\.class|client/renderer/rendertype/RenderTypes\.class|client/renderer/texture/OverlayTexture\.class|client/renderer/ItemBlockRenderTypes\.class' classes.txt | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
+          for c in $LIST; do
+            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | grep -vE '^\s*(private|static \{\})' | head -120 || true
           done > api.txt
+          echo "=== Minecraft (block/render getters)" >> api.txt
+          javap -cp "$CP" net.minecraft.client.Minecraft 2>&1 | grep -iE 'block|render|model' | head -60 >> api.txt || true
 
       - name: Publish build log
         if: always() && github.event_name != 'pull_request'
