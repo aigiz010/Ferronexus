@@ -4,7 +4,6 @@ import com.aigiz010.ferronexus.Ferronexus;
 import com.aigiz010.ferronexus.imprinter.ImprinterItem;
 import com.aigiz010.ferronexus.network.FarUsePayload;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -45,7 +44,6 @@ public final class ImprinterFar {
             HitResult h = p.pick(FarUsePayload.FAR, 1.0f, false);
             if (h instanceof BlockHitResult b && b.getType() == HitResult.Type.BLOCK) {
                 ClientPacketDistributor.sendToServer(new FarUsePayload(b.getBlockPos(), b.getDirection(), off));
-                p.swing(off ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
             }
         }
     }
