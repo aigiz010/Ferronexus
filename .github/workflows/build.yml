@@ -75,24 +75,23 @@ jobs:
         shell: bash
         run: |
           CP=$(find build ~/.gradle/caches -name '*.jar' 2>/dev/null | grep -iE 'neoforge|minecraft' | grep -viE 'sources|javadoc' | tr '\n' ':')
-          for c in 'net.neoforged.neoforge.capabilities.Capabilities$Item' 'net.neoforged.neoforge.capabilities.Capabilities$Fluid' \
-                   net.neoforged.neoforge.transfer.ResourceHandler net.neoforged.neoforge.transfer.ResourceHandlerUtil \
-                   net.neoforged.neoforge.transfer.item.ItemResource net.neoforged.neoforge.transfer.fluid.FluidResource \
-                   net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler \
-                   net.neoforged.neoforge.transfer.resource.ResourceStack \
-                   net.minecraft.client.renderer.blockentity.BlockEntityRenderer net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider \
-                   net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState net.minecraft.client.renderer.SubmitNodeCollector \
-                   'net.minecraft.client.renderer.SubmitNodeCollector$CustomGeometryRenderer' net.minecraft.client.renderer.rendertype.RenderTypes \
-                   net.minecraft.client.renderer.RenderType com.mojang.blaze3d.vertex.VertexConsumer com.mojang.blaze3d.vertex.PoseStack \
-                   'net.neoforged.neoforge.client.event.EntityRenderersEvent$RegisterRenderers' net.minecraft.client.renderer.texture.TextureAtlas \
-                   net.minecraft.client.renderer.texture.TextureAtlasSprite net.minecraft.client.resources.model.Material \
-                   net.minecraft.world.level.block.entity.BlockEntity net.minecraft.world.level.block.Block \
-                   net.minecraft.client.renderer.Sheets net.minecraft.client.renderer.LightTexture net.minecraft.client.renderer.state.CameraRenderState \
-                   'net.minecraft.client.renderer.feature.ModelFeatureRenderer$CrumblingOverlay' net.minecraft.data.AtlasIds net.minecraft.client.resources.model.AtlasManager \
-                   net.minecraft.client.renderer.texture.SpriteGetter net.minecraft.client.resources.model.sprite.SpriteGetter net.minecraft.client.resources.model.MaterialSet; do
+          for c in net.neoforged.neoforge.client.event.RenderLevelStageEvent \
+                   'net.neoforged.neoforge.client.event.RenderLevelStageEvent$AfterTranslucentBlocks' \
+                   'net.neoforged.neoforge.client.event.RenderLevelStageEvent$AfterParticles' \
+                   'net.neoforged.neoforge.client.event.RenderLevelStageEvent$AfterLevel' \
+                   'net.neoforged.neoforge.client.event.RenderLevelStageEvent$AfterOpaqueBlocks' \
+                   net.minecraft.client.renderer.state.level.LevelRenderState \
+                   net.minecraft.client.renderer.state.level.CameraRenderState \
+                   net.minecraft.client.renderer.MultiBufferSource 'net.minecraft.client.renderer.MultiBufferSource$BufferSource' \
+                   net.minecraft.client.renderer.RenderBuffers net.minecraft.client.renderer.ShapeRenderer \
+                   net.minecraft.client.renderer.rendertype.RenderType net.minecraft.client.Camera \
+                   net.minecraft.client.renderer.block.BlockRenderDispatcher \
+                   net.minecraft.client.renderer.SubmitNodeCollector net.minecraft.client.renderer.OrderedSubmitNodeCollector \
+                   net.minecraft.client.renderer.texture.TextureAtlasSprite net.minecraft.client.renderer.Sheets \
+                   'net.neoforged.neoforge.client.event.ClientTickEvent$Post' com.mojang.blaze3d.vertex.VertexConsumer; do
             echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | head -200 || true
           done > api.txt
-          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -E 'client/renderer/(blockentity|SubmitNode|rendertype|feature|texture|state|Sheets)|client/resources/model|client/model/|blaze3d/vertex|data/AtlasIds|client/event/EntityRenderers' | sort -u > classes.txt || true
+          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -E 'client/event/RenderLevel|client/renderer/(block/|state/level|ShapeRenderer|MultiBuffer|RenderBuffers|LevelRenderer|rendertype)|client/Camera|client/Minecraft' | sort -u > classes.txt || true
 
       - name: Publish build log
         if: always() && github.event_name != 'pull_request'
