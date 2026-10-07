@@ -79,9 +79,20 @@ jobs:
                    net.neoforged.neoforge.transfer.ResourceHandler net.neoforged.neoforge.transfer.ResourceHandlerUtil \
                    net.neoforged.neoforge.transfer.item.ItemResource net.neoforged.neoforge.transfer.fluid.FluidResource \
                    net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler \
-                   net.neoforged.neoforge.transfer.ResourceStack net.neoforged.neoforge.transfer.resource.Resource; do
+                   net.neoforged.neoforge.transfer.resource.ResourceStack \
+                   net.minecraft.client.renderer.blockentity.BlockEntityRenderer net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider \
+                   net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState net.minecraft.client.renderer.SubmitNodeCollector \
+                   'net.minecraft.client.renderer.SubmitNodeCollector$CustomGeometryRenderer' net.minecraft.client.renderer.rendertype.RenderTypes \
+                   net.minecraft.client.renderer.RenderType com.mojang.blaze3d.vertex.VertexConsumer com.mojang.blaze3d.vertex.PoseStack \
+                   'net.neoforged.neoforge.client.event.EntityRenderersEvent$RegisterRenderers' net.minecraft.client.renderer.texture.TextureAtlas \
+                   net.minecraft.client.renderer.texture.TextureAtlasSprite net.minecraft.client.resources.model.Material \
+                   net.minecraft.world.level.block.entity.BlockEntity net.minecraft.world.level.block.Block \
+                   net.minecraft.client.renderer.Sheets net.minecraft.client.renderer.LightTexture net.minecraft.client.renderer.state.CameraRenderState \
+                   'net.minecraft.client.renderer.feature.ModelFeatureRenderer$CrumblingOverlay' net.minecraft.data.AtlasIds net.minecraft.client.resources.model.AtlasManager \
+                   net.minecraft.client.renderer.texture.SpriteGetter net.minecraft.client.resources.model.sprite.SpriteGetter net.minecraft.client.resources.model.MaterialSet; do
             echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | head -200 || true
           done > api.txt
+          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -E 'client/renderer/(blockentity|SubmitNode|rendertype|feature|texture|state|Sheets)|client/resources/model|client/model/|blaze3d/vertex|data/AtlasIds|client/event/EntityRenderers' | sort -u > classes.txt || true
 
       - name: Publish build log
         if: always() && github.event_name != 'pull_request'
@@ -89,7 +100,7 @@ jobs:
         run: |
           mkdir -p /tmp/out
           [ -f build.log ] && cp build.log /tmp/out/build.log || echo "no log" > /tmp/out/build.log
-          cp neo.txt versions26.txt api.txt /tmp/out/ 2>/dev/null || true
+          cp neo.txt versions26.txt api.txt classes.txt /tmp/out/ 2>/dev/null || true
           grep -nE -A3 "error:|FAILED|What went wrong|Could not" /tmp/out/build.log | head -400 > /tmp/out/errors.txt || true
           echo "status=${{ job.status }}" > /tmp/out/status.txt
           echo "commit=${{ github.sha }}" >> /tmp/out/status.txt
