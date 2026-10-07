@@ -75,11 +75,12 @@ jobs:
         shell: bash
         run: |
           CP=$(find build ~/.gradle/caches -name '*.jar' 2>/dev/null | grep -iE 'neoforge|minecraft' | grep -viE 'sources|javadoc' | tr '\n' ':')
-          for c in net.minecraft.world.entity.player.Player net.minecraft.server.level.ServerPlayer net.minecraft.world.level.Level \
-                   net.neoforged.neoforge.transfer.energy.EnergyHandler net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler \
-                   net.neoforged.neoforge.transfer.transaction.Transaction 'net.neoforged.neoforge.capabilities.Capabilities$Energy' \
-                   net.minecraft.world.level.block.entity.BlockEntity net.minecraft.world.level.block.entity.FuelValues; do
-            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | head -400
+          for c in 'net.neoforged.neoforge.capabilities.Capabilities$Item' 'net.neoforged.neoforge.capabilities.Capabilities$Fluid' \
+                   net.neoforged.neoforge.transfer.ResourceHandler net.neoforged.neoforge.transfer.ResourceHandlerUtil \
+                   net.neoforged.neoforge.transfer.item.ItemResource net.neoforged.neoforge.transfer.fluid.FluidResource \
+                   net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler \
+                   net.neoforged.neoforge.transfer.ResourceStack net.neoforged.neoforge.transfer.resource.Resource; do
+            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | head -200 || true
           done > api.txt
 
       - name: Publish build log
