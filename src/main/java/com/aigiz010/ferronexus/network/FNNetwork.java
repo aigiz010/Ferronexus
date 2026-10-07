@@ -11,6 +11,8 @@ public final class FNNetwork {
 
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar("1").playToServer(RotateImprinterPayload.TYPE, RotateImprinterPayload.STREAM_CODEC, RotateImprinterPayload::handle);
+        var r = event.registrar("1");
+        r.playToServer(RotateImprinterPayload.TYPE, RotateImprinterPayload.STREAM_CODEC, RotateImprinterPayload::handle);
+        r.playToServer(FarUsePayload.TYPE, FarUsePayload.STREAM_CODEC, FarUsePayload::handle);
     }
 }

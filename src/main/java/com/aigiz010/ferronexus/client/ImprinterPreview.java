@@ -35,7 +35,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -48,6 +47,7 @@ import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
  *  - «Вставка» — мигающий полупрозрачный призрак с настоящими текстурами блоков, проводов и труб
  *    (с учётом поворота на R); красным оттенком — где место занято;
  *  - «Применить настройки» — зелёным совпадающие блоки.
+ *  - цель берётся с дальним прицелом (в 3 раза дальше).
  */
 @EventBusSubscriber(modid = Ferronexus.MOD_ID, value = Dist.CLIENT)
 public final class ImprinterPreview {
@@ -70,10 +70,8 @@ public final class ImprinterPreview {
         return Identifier.fromNamespaceAndPath(Ferronexus.MOD_ID, "textures/block/conduit/" + name + ".png");
     }
 
-    /** Провода в блоке схемы: маска типов, стороны каждого типа и разъёмы (уже повёрнутые). */
     private record Conduits(int mask, int[] bits, int[] ends) {}
 
-    /** quads — грани модели; conduits != null — блок проводов (рисуется своей геометрией). */
     private record Ghost(int x, int y, int z, BlockState state, List<BakedQuad> quads, Conduits conduits) {}
 
     private static CustomData cachedData;
@@ -128,7 +126,7 @@ public final class ImprinterPreview {
         }
 
         if ((mode == ImprintMode.PASTE || mode == ImprintMode.APPLY_SETTINGS)
-                && mc.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK) {
+                && ImprinterFar.target(mc) instanceof BlockHitResult hit) {
             refreshCache(mc, cd, tag, level, rot);
             if (!cachedGhosts.isEmpty()) {
                 final BlockPos origin = mode == ImprintMode.PASTE ? hit.getBlockPos().relative(hit.getDirection()) : hit.getBlockPos();
@@ -140,9 +138,8 @@ public final class ImprinterPreview {
                 final List<Ghost> ghosts = cachedGhosts;
                 final Set<Long> cells = cachedCells;
                 final float ox = origin.getX(), oy = origin.getY(), oz = origin.getZ();
-                final int alpha = (int) (90 + 120 * pulse); // ~35%..80%
+                final int alpha = (int) (90 + 120 * pulse);
 
-                // рамка + блоки без модели (и всё в режиме «Применить настройки») — сплошным цветом
                 out.submitCustomGeometry(pose, flat, (p, vc) -> {
                     frame(p, vc, ox - 0.02f, oy - 0.02f, oz - 0.02f, ox + sx + 0.02f, oy + sy + 0.02f, oz + sz + 0.02f, boxEdge);
                     int n = 0;
@@ -168,7 +165,6 @@ public final class ImprinterPreview {
                 });
 
                 if (paste) {
-                    // настоящие текстуры блоков, полупрозрачно и мигая
                     int n = 0;
                     for (Ghost g : ghosts) {
                         if (g.conduits() != null || g.quads().isEmpty()) continue;
@@ -196,7 +192,6 @@ public final class ImprinterPreview {
                         pose.popPose();
                     }
 
-                    // провода и трубы: по одной отправке на каждый тип (своя текстура)
                     int anyMask = 0, anyEnds = 0;
                     for (Ghost g : ghosts) {
                         if (g.conduits() == null) continue;
@@ -319,8 +314,6 @@ public final class ImprinterPreview {
         cachedCells = cells;
     }
 
-    // ---------- геометрия проводов (как в мире, но полупрозрачно) ----------
-    /** Коробка b в пикселях 0..16 внутри блока с мировыми координатами (gx, gy, gz). */
     private static void cbox(PoseStack.Pose p, VertexConsumer vc, double[] b, float gx, float gy, float gz, int col, Direction.Axis axis) {
         for (int f = 0; f < 6; f++) {
             float[] n = NORMALS[f];
