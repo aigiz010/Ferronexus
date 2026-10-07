@@ -75,23 +75,14 @@ jobs:
         shell: bash
         run: |
           CP=$(find build ~/.gradle/caches -name '*.jar' 2>/dev/null | grep -iE 'neoforge|minecraft' | grep -viE 'sources|javadoc' | tr '\n' ':')
-          for c in net.neoforged.neoforge.client.event.RenderLevelStageEvent \
-                   'net.neoforged.neoforge.client.event.RenderLevelStageEvent$AfterTranslucentBlocks' \
-                   'net.neoforged.neoforge.client.event.RenderLevelStageEvent$AfterParticles' \
-                   'net.neoforged.neoforge.client.event.RenderLevelStageEvent$AfterLevel' \
-                   'net.neoforged.neoforge.client.event.RenderLevelStageEvent$AfterOpaqueBlocks' \
-                   net.minecraft.client.renderer.state.level.LevelRenderState \
-                   net.minecraft.client.renderer.state.level.CameraRenderState \
-                   net.minecraft.client.renderer.MultiBufferSource 'net.minecraft.client.renderer.MultiBufferSource$BufferSource' \
-                   net.minecraft.client.renderer.RenderBuffers net.minecraft.client.renderer.ShapeRenderer \
-                   net.minecraft.client.renderer.rendertype.RenderType net.minecraft.client.Camera \
-                   net.minecraft.client.renderer.block.BlockRenderDispatcher \
-                   net.minecraft.client.renderer.SubmitNodeCollector net.minecraft.client.renderer.OrderedSubmitNodeCollector \
-                   net.minecraft.client.renderer.texture.TextureAtlasSprite net.minecraft.client.renderer.Sheets \
-                   'net.neoforged.neoforge.client.event.ClientTickEvent$Post' com.mojang.blaze3d.vertex.VertexConsumer; do
-            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | head -200 || true
+          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -vE '^patches/' | grep -E 'neoforge/client/event/[A-Za-z]+(\$[A-Za-z]+)?\.class|gizmos/|BufferSource|client/renderer/(SubmitNode|feature/[A-Z]|LevelRenderer|GameRenderer)|blaze3d/vertex/' | sort -u > classes.txt || true
+          EV=$(grep -E 'neoforge/client/event/(SubmitCustom|ExtractLevel|RenderLevel|AddSectionGeometry|RenderHighlight)' classes.txt | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
+          GZ=$(grep -E 'net/minecraft/gizmos/(Gizmos|GizmoStyle|GizmoProperties|CuboidGizmo)\.class' classes.txt | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
+          for c in $EV $GZ net.minecraft.client.renderer.LevelRenderer net.minecraft.client.renderer.GameRenderer net.minecraft.client.Minecraft \
+                   net.minecraft.client.renderer.feature.FeatureRenderDispatcher net.minecraft.client.renderer.SubmitNodeStorage \
+                   com.mojang.blaze3d.vertex.Tesselator com.mojang.blaze3d.vertex.BufferBuilder; do
+            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | grep -vE '^\s*(private|static \{\})' | head -300 || true
           done > api.txt
-          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -E 'client/event/RenderLevel|client/renderer/(block/|state/level|ShapeRenderer|MultiBuffer|RenderBuffers|LevelRenderer|rendertype)|client/Camera|client/Minecraft' | sort -u > classes.txt || true
 
       - name: Publish build log
         if: always() && github.event_name != 'pull_request'
