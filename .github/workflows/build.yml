@@ -75,13 +75,14 @@ jobs:
         shell: bash
         run: |
           CP=$(find build ~/.gradle/caches -name '*.jar' 2>/dev/null | grep -iE 'neoforge|minecraft' | grep -viE 'sources|javadoc' | tr '\n' ':')
-          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -vE '^patches/' | grep -E 'neoforge/client/event/[A-Za-z]+(\$[A-Za-z]+)?\.class|gizmos/|BufferSource|client/renderer/(SubmitNode|feature/[A-Z]|LevelRenderer|GameRenderer)|blaze3d/vertex/' | sort -u > classes.txt || true
-          EV=$(grep -E 'neoforge/client/event/(SubmitCustom|ExtractLevel|RenderLevel|AddSectionGeometry|RenderHighlight)' classes.txt | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
-          GZ=$(grep -E 'net/minecraft/gizmos/(Gizmos|GizmoStyle|GizmoProperties|CuboidGizmo)\.class' classes.txt | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
-          for c in $EV $GZ net.minecraft.client.renderer.LevelRenderer net.minecraft.client.renderer.GameRenderer net.minecraft.client.Minecraft \
-                   net.minecraft.client.renderer.feature.FeatureRenderDispatcher net.minecraft.client.renderer.SubmitNodeStorage \
-                   com.mojang.blaze3d.vertex.Tesselator com.mojang.blaze3d.vertex.BufferBuilder; do
-            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | grep -vE '^\s*(private|static \{\})' | head -300 || true
+          for j in $(echo "$CP" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | grep -vE '^patches/' | grep -E 'neoforge/network/|neoforge/client/network/|KeyMapping|InputConstants|RegisterKeyMappingsEvent|protocol/common/custom/CustomPacketPayload|network/codec/(StreamCodec|ByteBufCodecs)|level/block/Rotation|neoforge/client/settings/' | sort -u > classes.txt || true
+          NW=$(grep -E 'neoforge/network/(PacketDistributor|event/RegisterPayloadHandlersEvent|registration/PayloadRegistrar|handling/IPayloadContext|handling/IPayloadHandler)\.class|neoforge/client/network/ClientPacketDistributor\.class|neoforge/client/settings/KeyConflictContext\.class' classes.txt | sed 's#/#.#g; s#\.class$##' | tr '\n' ' ')
+          for c in $NW net.minecraft.client.KeyMapping 'net.minecraft.client.KeyMapping$Category' com.mojang.blaze3d.platform.InputConstants \
+                   net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent \
+                   net.minecraft.network.protocol.common.custom.CustomPacketPayload 'net.minecraft.network.protocol.common.custom.CustomPacketPayload$Type' \
+                   net.minecraft.network.codec.StreamCodec net.minecraft.network.codec.ByteBufCodecs \
+                   net.minecraft.world.level.block.Rotation net.neoforged.neoforge.client.event.ClientTickEvent; do
+            echo "=== $c"; javap -cp "$CP" "$c" 2>&1 | grep -vE '^\s*(private|static \{\})' | head -200 || true
           done > api.txt
 
       - name: Publish build log
